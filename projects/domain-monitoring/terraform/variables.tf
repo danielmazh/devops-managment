@@ -20,6 +20,18 @@ variable "backend_instance_type" {
   default     = "t3.micro"
 }
 
+variable "backend_instance_count" {
+  description = "Backend instance count"
+  type        = number
+  default     = "1"  
+}
+
+variable "frontend_instance_count" {
+  description = "Fronend instance count"
+  type        = number
+  default     = "2"  
+}
+
 variable "frontend_instance_type" {
   description = "EC2 instance type"
   type        = string

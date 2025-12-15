@@ -50,3 +50,41 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
+# Provision backend instances based on the user input
+resource "aws_instance" "backend" {
+  count         = var.backend_instance_count
+  ami           = var.ami_id
+  instance_type = var.backend_instance_type
+  
+  # Security group
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
+  
+  # Key pair for SSH access
+  key_name = var.key_name
+  
+  tags = {
+    Name        = "${var.customer_name}"
+    Instance_count = "backend-${count.index}"
+    Instance_role = "backend-service"
+  }
+}
+
+# Provision frontend instances based on the user input
+resource "aws_instance" "backend" {
+  count         = var.frontend_instance_count
+  ami           = var.ami_id
+  instance_type = var.frontend_instance_type
+  
+  # Security group
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
+  
+  # Key pair for SSH access
+  key_name = var.key_name
+  
+  tags = {
+    Name        = "${var.customer_name}"
+    Instance_count = "fronend-${count.index}"
+    Instance_role = "frontend-service"
+  }
+}
+
