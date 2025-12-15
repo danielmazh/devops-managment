@@ -1,5 +1,4 @@
 // from this groovy i should get the following information:
-// number of backend services
-// number of front-end services
-// custom domain name for the application
-// application version frontend and backend
+//   -var="customer_name=client-x" \
+//   -var="backend_instance_count=2" \
+//   -var="frontend_instance_count=2"
