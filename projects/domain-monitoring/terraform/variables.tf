@@ -23,13 +23,13 @@ variable "backend_instance_type" {
 variable "backend_instance_count" {
   description = "Backend instance count"
   type        = number
-  default     = "1"  
+  default     = 1  
 }
 
 variable "frontend_instance_count" {
   description = "Fronend instance count"
   type        = number
-  default     = "2"  
+  default     = 2  
 }
 
 variable "frontend_instance_type" {

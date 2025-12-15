@@ -63,14 +63,13 @@ resource "aws_instance" "backend" {
   key_name = var.key_name
   
   tags = {
-    Name        = "${var.customer_name}"
-    Instance_count = "backend-${count.index}"
+    Name        = "${var.customer_name}-backend-${count.index}"
     Instance_role = "backend-service"
   }
 }
 
 # Provision frontend instances based on the user input
-resource "aws_instance" "backend" {
+resource "aws_instance" "frontend" {
   count         = var.frontend_instance_count
   ami           = var.ami_id
   instance_type = var.frontend_instance_type
@@ -82,8 +81,7 @@ resource "aws_instance" "backend" {
   key_name = var.key_name
   
   tags = {
-    Name        = "${var.customer_name}"
-    Instance_count = "fronend-${count.index}"
+    Name          = "${var.customer_name}-frontend-${count.index}"
     Instance_role = "frontend-service"
   }
 }
