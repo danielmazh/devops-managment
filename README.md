@@ -1,35 +1,32 @@
-# Jenkins Infrastructure as Code
+# DevOps Management Monorepo
 
-Automated setup for a Jenkins Master/Agent architecture on AWS using Terraform for provisioning and Ansible for configuration.
+This repository serves as a centralized location for managing various Infrastructure as Code (IaC) deployments, Ansible playbooks, and general automation scripts.
 
-## Project Structure
+## Structure
+
+The repository is organized by project usage, keeping all related tools (Terraform, Ansible, Scripts) for a specific deployment within its own directory.
 
 ```
-├── terraform/
-│   ├── main.tf                 # AWS resource definitions (VPC, EC2, SG)
-│   └── variables.tf            # Infrastructure configuration variables
-├── configure-jenkins-ansible/
-│   ├── main.yaml               # Main playbook entry point
-│   └── tasks/
-│       ├── configure_master.yaml # Jenkins Master setup (Docker, JCasC)
-│       └── configure_slave.yaml  # Jenkins Agent setup
-├── jenkins-iac/
-│   ├── jcasc.yaml              # Jenkins Configuration as Code (plugins, security)
-│   └── Dockerfile.base         # Custom Jenkins Docker image definition
-└── run_infra_and_configure.sh  # Single-script deployment automation
+.
+├── projects/
+│   ├── jenkins-aws/          # Jenkins Master/Agent deployment on AWS
+│   └── [future-project]/     # Place new projects here
+│
+├── shared/
+│   ├── tf-modules/           # Reusable Terraform modules
+│   └── ansible-roles/        # Reusable Ansible roles
+│
+└── README.md
 ```
 
-## Components
+## Projects
 
-- **Terraform**: Provisions the underlying AWS infrastructure including a custom VPC, subnets, internet gateway, and EC2 instances for the Master and Agent.
-- **Ansible**: Configures the EC2 instances by installing dependencies (Docker, Java, Git), deploying the Jenkins Master container, and connecting the Agent node.
-- **Jenkins IaC**: Uses Jenkins Configuration as Code (JCasC) to pre-configure the Jenkins instance with pipelines, credentials, and cloud settings.
+### [Jenkins on AWS](./projects/jenkins-aws/)
+A complete setup for deploying Jenkins Master and Agent nodes on AWS.
+- **Tools**: Terraform, Ansible, Docker, JCasC
+- **Location**: `projects/jenkins-aws/`
 
-## Quick Start
+## Shared Resources
 
-1. **Configure Credentials**: Ensure AWS credentials and environment variables are set in `terraform/terraform.env` and `jenkins-iac/jenkins.env`.
-2. **Deploy**: Run the main automation script:
-
-```bash
-./run_infra_and_configure.sh
-```
+- **tf-modules**: generic Terraform modules that can be imported by any project.
+- **ansible-roles**: generic Ansible roles for common configuration tasks.

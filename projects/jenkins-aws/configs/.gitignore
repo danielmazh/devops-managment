@@ -1,0 +1,16 @@
+# Environment variables with secrets
+.env
+
+# Jenkins data (if you want to ignore local data)
+jenkins-data/
+
+# Temporary files
+*.tmp
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+

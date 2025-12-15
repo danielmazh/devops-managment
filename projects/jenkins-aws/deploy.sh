@@ -19,7 +19,7 @@ terraform init -upgrade
 terraform apply -auto-approve
 
 echo "==> Terraform completed. Running Ansible playbook"
-cd "$ROOT_DIR/configure-jenkins-ansible"
+cd "$ROOT_DIR/ansible"
 ansible-playbook -i ~/ansible_aws/aws_ec2.yml main.yaml
 
 echo "==> Done"

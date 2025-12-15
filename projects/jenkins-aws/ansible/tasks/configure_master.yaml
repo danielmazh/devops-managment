@@ -38,16 +38,16 @@
     mode: '0777'
 
 # Copy environment variables file
-- name: Copy ../jenkins-iac/jenkins.env -> /var/jenkins_home/jenkins.env
+- name: Copy ../configs/jenkins.env -> /var/jenkins_home/jenkins.env
   ansible.builtin.copy:
-    src: /Users/danielmazmazhbits/CProjects/domain-monitoring-system/jenkins-iac/jenkins.env
+    src: "{{ playbook_dir }}/../configs/jenkins.env"
     dest: /var/jenkins_home/jenkins.env
     mode: '0644'
 
 # Copy JCasC configuration file
-- name: Copy ../jenkins-iac/jcasc.yaml -> /var/jenkins_home/jcasc.yaml
+- name: Copy ../configs/jcasc.yaml -> /var/jenkins_home/jcasc.yaml
   ansible.builtin.copy:
-    src: /Users/danielmazmazhbits/CProjects/domain-monitoring-system/jenkins-iac/jcasc.yaml
+    src: "{{ playbook_dir }}/../configs/jcasc.yaml"
     dest: /var/jenkins_home/jcasc.yaml
     mode: '0644'
 
@@ -73,7 +73,7 @@
 
 # Extract Docker Hub username
 - name: Read DOCKER_HUB_USERNAME from local jenkins.env
-  ansible.builtin.shell: "grep '^DOCKER_HUB_USERNAME=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+  ansible.builtin.shell: "grep '^DOCKER_HUB_USERNAME=' {{ playbook_dir }}/../configs/jenkins.env | cut -d'=' -f2"
   register: docker_hub_username_result
   delegate_to: localhost
   become: false
@@ -82,7 +82,7 @@
 
 # Extract Docker Hub password
 - name: Read DOCKER_HUB_PASSWORD from local jenkins.env
-  ansible.builtin.shell: "grep '^DOCKER_HUB_PASSWORD=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+  ansible.builtin.shell: "grep '^DOCKER_HUB_PASSWORD=' {{ playbook_dir }}/../configs/jenkins.env | cut -d'=' -f2"
   register: docker_hub_password_result
   delegate_to: localhost
   become: false
@@ -154,7 +154,7 @@
 
 # Retrieve Jenkins admin password
 - name: Read JENKINS_ADMIN_PASSWORD from local jenkins.env
-  ansible.builtin.shell: "grep '^JENKINS_ADMIN_PASSWORD=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+  ansible.builtin.shell: "grep '^JENKINS_ADMIN_PASSWORD=' {{ playbook_dir }}/../configs/jenkins.env | cut -d'=' -f2"
   register: jenkins_admin_password_result
   delegate_to: localhost
   become: false

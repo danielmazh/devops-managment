@@ -80,7 +80,7 @@
         master_public_ip: "{{ hostvars[selected_master].jenkins_master_ip_var }}"
 
     - name: Read GitHub PAT from jenkins.env
-      ansible.builtin.shell: "grep '^GIT_NEW_NEW_PASSWORD=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+      ansible.builtin.shell: "grep '^GIT_NEW_NEW_PASSWORD=' {{ playbook_dir }}/../configs/jenkins.env | cut -d'=' -f2"
       register: github_pat_result
       delegate_to: localhost
       become: false

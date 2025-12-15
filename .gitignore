@@ -1,9 +1,9 @@
 .DS_Store
-terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/5.100.0/darwin_amd64/terraform-provider-aws_v5.100.0_x5
-terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/5.100.0/darwin_amd64/LICENSE.txt
-terraform/terraform.env
-terraform/.terraform.lock.hcl
-terraform/terraform.tfstate.backup
-jenkins-iac/jenkins.env
-jenkins-iac/.gitignore
+**/.DS_Store
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.env
 jenkins_first_init
