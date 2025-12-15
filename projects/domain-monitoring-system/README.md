@@ -36,6 +36,13 @@ When running `terraform apply`, you must provide the following variables. You ca
 | `key_name` | Name of the existing AWS Key Pair for SSH access. | `daniel-devops` |
 | `ami_id` | AMI ID for the EC2 instances (ensure it matches the region). | `ami-0f5fcdfbd140e4ab7` |
 
+### Outputs
+
+After a successful deployment, Terraform will output:
+- **Load Balancer DNS**: Public URL for the Frontend ALB and Internal URL for the Backend ALB.
+- **Instance IPs**: Public and Private IPs for debugging.
+- **Instance IDs**: AWS IDs for all provisioned instances.
+
 ### Example Usage
 
 ```bash
