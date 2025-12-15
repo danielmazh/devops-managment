@@ -1,0 +1,117 @@
+
+---
+# PLAY 1: Configure the Master Node
+- name: Configure Jenkins Master
+  hosts: jenkins_master
+  become: true
+  gather_facts: false
+  pre_tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        sleep: 5
+        timeout: 120
+    - name: Gather facts after SSH is up
+      ansible.builtin.setup:
+
+  tasks:
+    - name: Import Master Tasks
+      include_tasks: tasks/configure_master.yaml
+
+    - name: Store the master public ip
+      add_host:
+        name: "MASTER_PUBLIC_IP"
+        public_ip: "{{ jenkins_master_ip_var }}"
+    
+    - name: Display Jenkins Master public IP
+      ansible.builtin.debug:
+        msg: "Jenkins Master public IP: {{ jenkins_master_ip_var }}"
+
+    - name: Store JNLP secret for slave
+      add_host:
+        name: "JNLP_SECRET"
+        jnlp_secret: "{{ jenkins_slave_jnlp_secret }}"
+    
+    - name: Display JNLP Secret
+      ansible.builtin.debug:
+        msg: "JNLP Secret: {{ jenkins_slave_jnlp_secret }}"
+
+# PLAY 2: Configure the Slave Node
+# Optional: override which master to use via -e target_master=<hostname>
+- name: Configure Jenkins Slave
+  hosts: jenkins_slave
+  become: true
+  gather_facts: false
+  pre_tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        sleep: 5
+        timeout: 120
+    - name: Gather facts after SSH is up
+      ansible.builtin.setup:
+
+  tasks:
+    - name: Pick master host (first in group, unless overridden)
+      ansible.builtin.set_fact:
+        selected_master: "{{ target_master | default(groups['jenkins_master'][0]) }}"
+      run_once: true
+
+    - name: Import Slave Tasks
+      include_tasks: tasks/configure_slave.yaml
+      vars:
+        master_public_ip: "{{ hostvars[selected_master].jenkins_master_ip_var }}"
+        jnlp_secret: "{{ hostvars[selected_master].jenkins_slave_jnlp_secret }}"
+
+# PLAY 3: Create GitHub Webhook to Jenkins
+# Requires: define github_token (PAT with repo:admin or appropriate scopes)
+- name: Create GitHub webhook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    repo_full_name: "danielmazh/domain-monitoring-system"
+  tasks:
+    - name: Pick master host (first in group, unless overridden)
+      ansible.builtin.set_fact:
+        selected_master: "{{ target_master | default(groups['jenkins_master'][0]) }}"
+
+    - name: Resolve master public IP for webhook
+      ansible.builtin.set_fact:
+        master_public_ip: "{{ hostvars[selected_master].jenkins_master_ip_var }}"
+
+    - name: Read GitHub PAT from jenkins.env
+      ansible.builtin.shell: "grep '^GIT_NEW_NEW_PASSWORD=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+      register: github_pat_result
+      delegate_to: localhost
+      become: false
+      run_once: true
+      changed_when: false
+      no_log: true
+
+    - name: Set GitHub token fact
+      ansible.builtin.set_fact:
+        github_token: "{{ github_pat_result.stdout.strip() }}"
+      run_once: true
+      no_log: true
+
+    - name: Create GitHub webhook (push -> Jenkins)
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/{{ repo_full_name }}/hooks"
+        method: POST
+        status_code: [201, 200]
+        validate_certs: false
+        headers:
+          Authorization: "token {{ github_token }}"
+          Accept: "application/vnd.github+json"
+        body_format: json
+        body:
+          name: "web"
+          active: true
+          events:
+            - push
+          config:
+            url: "http://{{ master_public_ip }}:8080/github-webhook/"
+            content_type: "json"
+            insecure_ssl: "0"
+      delegate_to: localhost
+      run_once: true

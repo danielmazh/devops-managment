@@ -1,0 +1,72 @@
+jenkins:
+  systemMessage: "Jenkins is a CI/CD tool that allows you to build, test, and deploy your code."
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: true
+
+  nodes:
+    - permanent:
+        name: "jenkins-slave"
+        nodeDescription: "An inbound agent configured with JCasC"
+        remoteFS: "/var/jenkins_home"
+        numExecutors: 2
+        labelString: "jenkins-slave-team-3-new"
+        mode: NORMAL
+        retentionStrategy:
+          always: {}
+        launcher:
+          inbound:
+            workDirSettings:
+              disabled: true
+              internalDir: "remoting"
+              workDirPath: "/var/jenkins_home"
+              failIfWorkDirIsMissing: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              id: "git-new-new"
+              scope: GLOBAL
+              description: "git-new-new"
+              username: "${GIT_NEW_NEW_USERNAME}"
+              password: "${GIT_NEW_NEW_PASSWORD}"
+          - usernamePassword:
+              id: "docker-hub-token"
+              scope: GLOBAL
+              description: "docker-hub-token"
+              username: "${DOCKER_HUB_USERNAME}"
+              password: "${DOCKER_HUB_PASSWORD}"
+
+jobs:
+  - script: |
+      pipelineJob('domain-monitoring-system') {
+        description('Domain Monitoring System')
+        properties {
+          githubProjectUrl('https://github.com/danielmazh/domain-monitoring-system.git')
+        }
+        triggers {
+          githubPush()
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/danielmazh/domain-monitoring-system.git')
+                  credentials('git-new-new')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile.groovy')
+          }
+        }
+      }

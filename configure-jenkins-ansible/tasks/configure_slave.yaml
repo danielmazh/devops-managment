@@ -1,0 +1,93 @@
+# Update system package cache
+- name: Update apt cache (slave)
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+# Install required system dependencies
+- name: Install required packages (slave)
+  ansible.builtin.apt:
+    name:
+      - openjdk-17-jre
+      - git
+      - docker.io
+      - python3
+      - python3-pip
+      - python3-venv
+      - curl
+    state: present
+
+# Enable and start Docker service
+- name: Ensure Docker service is started and enabled (slave)
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+# Create Jenkins home directory
+- name: Create /var/jenkins_home with permissions 777 (slave)
+  ansible.builtin.file:
+    path: /var/jenkins_home
+    state: directory
+    mode: '0777'
+
+# Create agent directory
+- name: Create /var/jenkins_home/agent with permissions 777 (slave)
+  ansible.builtin.file:
+    path: /var/jenkins_home/agent
+    state: directory
+    mode: '0777'
+
+# Download agent JAR from Master
+- name: Download agent.jar from master
+  ansible.builtin.get_url:
+    url: "http://{{ master_public_ip }}:8080/jnlpJars/agent.jar"
+    dest: /var/jenkins_home/agent/agent.jar
+    mode: '0755'
+  register: agent_jar
+
+# Debug agent JAR URL
+- name: debug the full link of the agent.jar
+  ansible.builtin.debug:
+    msg: "Agent jar link: http://{{ master_public_ip }}:8080/jnlpJars/agent.jar"
+
+# Determine agent node name
+- name: Derive agent name
+  ansible.builtin.set_fact:
+    agent_name: "{{ (hostvars[inventory_hostname].tags['Name'] | default(inventory_hostname, true)) if (hostvars[inventory_hostname].tags is defined) else inventory_hostname }}"
+
+# Configure systemd service for agent
+- name: Create systemd service for Jenkins agent (jnlp)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/jenkins-agent-jnlp.service
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Jenkins Agent JNLP
+      After=network.target docker.service
+
+      [Service]
+      WorkingDirectory=/var/jenkins_home/
+      ExecStart=/usr/bin/java -jar /var/jenkins_home/agent/agent.jar -url http://{{ master_public_ip }}:8080/ -secret {{ jnlp_secret }} -name "{{ agent_name }}" -webSocket -workDir /var/jenkins_home
+      Restart=on-failure
+      RestartSec=5s
+
+      [Install]
+      WantedBy=multi-user.target
+  register: agent_service_unit
+
+# Reload systemd configuration
+- name: Reload systemd and restart agent service if needed
+  ansible.builtin.systemd:
+    name: jenkins-agent-jnlp.service
+    state: restarted
+    enabled: yes
+    daemon_reload: true
+  when: agent_service_unit.changed or agent_jar.changed
+
+# Start Jenkins agent service
+- name: Ensure agent service is started and enabled
+  ansible.builtin.systemd:
+    name: jenkins-agent-jnlp.service
+    state: started
+    enabled: yes

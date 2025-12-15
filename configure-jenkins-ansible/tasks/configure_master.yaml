@@ -1,0 +1,223 @@
+# Update system package cache
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+# Install Java Runtime Environment
+- name: Install openjdk-17-jre
+  ansible.builtin.apt:
+    name: openjdk-17-jre
+    state: present
+
+# Install Docker container engine
+- name: Install docker.io
+  ansible.builtin.apt:
+    name: docker.io
+    state: present
+
+# Enable and start Docker service
+- name: Ensure Docker service is started and enabled
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes
+    
+# Create Jenkins home directory
+- name: Create /var/jenkins_home with permissions 777
+  ansible.builtin.file:
+    path: /var/jenkins_home
+    state: directory
+    mode: '0777'
+
+# Create Jenkins agent directory
+- name: Create /var/jenkins_home/agent with permissions 777
+  ansible.builtin.file:
+    path: /var/jenkins_home/agent
+    state: directory
+    mode: '0777'
+
+# Copy environment variables file
+- name: Copy ../jenkins-iac/jenkins.env -> /var/jenkins_home/jenkins.env
+  ansible.builtin.copy:
+    src: /Users/danielmazmazhbits/CProjects/domain-monitoring-system/jenkins-iac/jenkins.env
+    dest: /var/jenkins_home/jenkins.env
+    mode: '0644'
+
+# Copy JCasC configuration file
+- name: Copy ../jenkins-iac/jcasc.yaml -> /var/jenkins_home/jcasc.yaml
+  ansible.builtin.copy:
+    src: /Users/danielmazmazhbits/CProjects/domain-monitoring-system/jenkins-iac/jcasc.yaml
+    dest: /var/jenkins_home/jcasc.yaml
+    mode: '0644'
+
+# Check existence of environment file
+- name: Check if jenkins.env exists
+  ansible.builtin.stat:
+    path: /var/jenkins_home/jenkins.env
+  register: jenkins_env_stat
+
+# Check existence of JCasC file
+- name: Check if jcasc.yaml exists
+  ansible.builtin.stat:
+    path: /var/jenkins_home/jcasc.yaml
+  register: jcasc_yaml_stat
+
+# Verify configuration files presence
+- name: Verify both files are copied
+  ansible.builtin.assert:
+    that:
+      - jenkins_env_stat.stat.exists
+      - jcasc_yaml_stat.stat.exists
+    fail_msg: "Jenkins Configuration Files not copied"
+
+# Extract Docker Hub username
+- name: Read DOCKER_HUB_USERNAME from local jenkins.env
+  ansible.builtin.shell: "grep '^DOCKER_HUB_USERNAME=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+  register: docker_hub_username_result
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+
+# Extract Docker Hub password
+- name: Read DOCKER_HUB_PASSWORD from local jenkins.env
+  ansible.builtin.shell: "grep '^DOCKER_HUB_PASSWORD=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+  register: docker_hub_password_result
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+
+# Store Docker Hub username
+- name: Set DOCKER_HUB_USERNAME as a fact
+  ansible.builtin.set_fact:
+    docker_hub_username: "{{ docker_hub_username_result.stdout.strip() }}"
+
+# Store Docker Hub password
+- name: Set DOCKER_HUB_PASSWORD as a fact
+  ansible.builtin.set_fact:
+    docker_hub_password: "{{ docker_hub_password_result.stdout.strip() }}"
+
+# Log in to Docker Hub
+- name: Docker Login
+  ansible.builtin.shell: "docker login -u {{ docker_hub_username }} -p {{ docker_hub_password }}"
+  register: docker_login_result
+  changed_when: false
+  
+# Verify Docker login status
+- name: Verify Docker login with ps aux | grep docker
+  ansible.builtin.shell: "ps aux | grep docker"
+  register: docker_ps_result
+  changed_when: false
+
+# Pull Jenkins Docker image
+- name: Pull Jenkins Image
+  ansible.builtin.shell: "docker pull danielmazh/jenkins:0.0.1"
+  register: docker_pull_result
+
+# List Docker images
+- name: print docker images
+  ansible.builtin.shell: "docker images"
+  register: docker_images_result
+  changed_when: false
+
+# Check for existing Jenkins container
+- name: Check if jenkins-jcasc container exists
+  ansible.builtin.shell: "docker ps -a --filter name=jenkins-jcasc --format '{{ '{{' }}.Names{{ '}}' }}'"
+  register: existing_container
+  changed_when: false
+  failed_when: false
+
+# Remove existing Jenkins container
+- name: Stop and remove existing jenkins-jcasc container if it exists
+  ansible.builtin.shell: "docker stop jenkins-jcasc && docker rm jenkins-jcasc"
+  when: existing_container.stdout != ""
+  ignore_errors: true
+
+# Start Jenkins container
+- name: Run Jenkins Container
+  ansible.builtin.shell: "docker run -d --name jenkins-jcasc -p 8080:8080 -p 50000:50000 -v /var/jenkins_home:/var/jenkins_home -e CASC_JENKINS_CONFIG=/var/jenkins_home/jcasc.yaml -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\" --env-file /var/jenkins_home/jenkins.env danielmazh/jenkins:0.0.1"
+  register: docker_run_result
+
+# Wait for Jenkins initialization
+- name: Wait for Jenkins to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:8080/login"
+    status_code: [200, 403]
+    method: GET
+  register: jenkins_ready
+  until: jenkins_ready.status == 200 or jenkins_ready.status == 403
+  retries: 30
+  delay: 10
+  ignore_errors: true
+
+# Retrieve Jenkins admin password
+- name: Read JENKINS_ADMIN_PASSWORD from local jenkins.env
+  ansible.builtin.shell: "grep '^JENKINS_ADMIN_PASSWORD=' {{ playbook_dir }}/../jenkins-iac/jenkins.env | cut -d'=' -f2"
+  register: jenkins_admin_password_result
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+
+# Store Jenkins admin password
+- name: Set JENKINS_ADMIN_PASSWORD as a fact
+  ansible.builtin.set_fact:
+    jenkins_admin_password: "{{ jenkins_admin_password_result.stdout.strip() }}"
+
+# Determine public IP address
+- name: Fetch public IPv4 via shell (IMDSv2 with fallback)
+  ansible.builtin.shell: |
+    set -e
+    TOKEN=$(curl -sS -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" || true)
+    if [ -n "$TOKEN" ]; then
+      curl -sS -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4
+    else
+      curl -sS http://169.254.169.254/latest/meta-data/public-ipv4
+    fi
+  register: public_ip_shell
+  changed_when: false
+  failed_when: false
+
+# Store Jenkins Master IP
+- name: Save Jenkins Master IP to a variable
+  ansible.builtin.set_fact:
+    jenkins_master_ip_var: "{{ (public_ip_shell.stdout | default('') | trim) | default(ansible_facts.ec2_public_ipv4, true) | default(ansible_host, true) | default(ansible_default_ipv4.address, true) }}"
+
+# Display Jenkins Master IP
+- name: Display Jenkins Master IP
+  ansible.builtin.debug:
+    msg: "Jenkins Master IP: {{ jenkins_master_ip_var }}"
+
+# Retrieve JNLP secret from Master
+- name: Retrieve JNLP Secret for jenkins-slave
+  ansible.builtin.shell: |
+    curl -s -u "admin:{{ jenkins_admin_password }}" \
+      "http://localhost:8080/computer/jenkins-slave/slave-agent.jnlp" \
+      | sed -n 's/.*<argument>\([0-9a-f]\{32,64\}\)<\/argument>.*/\1/p'
+  register: jnlp_secret_result
+  retries: 10
+  delay: 5
+  until: jnlp_secret_result.rc == 0 and jnlp_secret_result.stdout != ""
+  failed_when: false
+
+# Validate JNLP secret retrieval
+- name: Verify JNLP Secret was retrieved
+  ansible.builtin.assert:
+    that:
+      - jnlp_secret_result.rc == 0
+      - jnlp_secret_result.stdout != ""
+      - jnlp_secret_result.stdout | length >= 32
+    fail_msg: "Failed to retrieve JNLP secret. Output: {{ jnlp_secret_result.stdout }}"
+    success_msg: "JNLP secret retrieved successfully: {{ jnlp_secret_result.stdout }}"
+
+# Store JNLP secret for slave
+- name: Set JNLP Secret as fact for slave configuration
+  ansible.builtin.set_fact:
+    jenkins_slave_jnlp_secret: "{{ jnlp_secret_result.stdout.strip() }}"
+
+# Display JNLP Secret
+- name: Display JNLP Secret (for debugging)
+  ansible.builtin.debug:
+    msg: "JNLP Secret for jenkins-slave: {{ jenkins_slave_jnlp_secret }}"
