@@ -10,7 +10,7 @@ The repository is organized by project usage, keeping all related tools (Terrafo
 .
 ├── projects/
 │   ├── jenkins-aws/          # Jenkins Master/Agent deployment on AWS
-│   └── [future-project]/     # Place new projects here
+│   └── domain-monitoring/    # Domain Monitoring System (FE, BE, LB)
 │
 ├── shared/
 │   ├── tf-modules/           # Reusable Terraform modules
@@ -25,6 +25,11 @@ The repository is organized by project usage, keeping all related tools (Terrafo
 A complete setup for deploying Jenkins Master and Agent nodes on AWS.
 - **Tools**: Terraform, Ansible, Docker, JCasC
 - **Location**: `projects/jenkins-aws/`
+
+### [Domain Monitoring System](./projects/domain-monitoring/)
+Infrastructure and configuration for the Domain Monitoring System application (FE, BE, Load Balancer).
+- **Tools**: Terraform, Ansible
+- **Location**: `projects/domain-monitoring/`
 
 ## Shared Resources
 
