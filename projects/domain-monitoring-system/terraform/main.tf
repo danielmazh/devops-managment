@@ -1,4 +1,7 @@
+# # # # # # # # # # # # # # #
 # Configure AWS Provider
+# # # # # # # # # # # # # # #
+
 terraform {
   required_providers {
     aws = {
@@ -15,7 +18,10 @@ provider "aws" {
   profile = "default"
 }
 
-# Data sources to get default VPC and subnets
+# # # # # # # # # # # # # # #
+# Data Sources (VPC & Subnets)
+# # # # # # # # # # # # # # #
+
 data "aws_vpc" "default" {
   default = true
 }
@@ -26,6 +32,10 @@ data "aws_subnets" "default" {
     values = [data.aws_vpc.default.id]
   }
 }
+
+# # # # # # # # # # # # # # #
+# Security Group
+# # # # # # # # # # # # # # #
 
 resource "aws_security_group" "app_sg" {
   name        = "${var.customer_name}-sg"
@@ -72,7 +82,10 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# Provision backend instances based on the user input
+# # # # # # # # # # # # # # #
+# EC2 Instances (Backend)
+# # # # # # # # # # # # # # #
+
 resource "aws_instance" "backend" {
   count         = var.backend_instance_count
   ami           = var.ami_id
@@ -90,7 +103,10 @@ resource "aws_instance" "backend" {
   }
 }
 
-# Provision frontend instances based on the user input
+# # # # # # # # # # # # # # #
+# EC2 Instances (Frontend)
+# # # # # # # # # # # # # # #
+
 resource "aws_instance" "frontend" {
   count         = var.frontend_instance_count
   ami           = var.ami_id

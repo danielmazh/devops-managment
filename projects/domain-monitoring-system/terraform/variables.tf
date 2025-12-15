@@ -1,5 +1,7 @@
-# # # # # # # # # #
+# # # # # # # # # # # # # # #
 # AWS Configuration
+# # # # # # # # # # # # # # #
+
 variable "aws_region" {
   description = "AWS region where resources will be created"
   type        = string
@@ -8,6 +10,8 @@ variable "aws_region" {
 
 # # # # # # # # # # # # # # #
 # EC2 Instance Configuration
+# # # # # # # # # # # # # # #
+
 variable "ami_id" {
   description = "AMI ID for the EC2 instances"
   type        = string
@@ -38,6 +42,10 @@ variable "frontend_instance_type" {
   default     = "t3.micro"
 }
 
+# # # # # # # # # # # # # # #
+# Customer Identification
+# # # # # # # # # # # # # # #
+
 variable "customer_name" {
   description = "The name of the customer environment"
   type        = string
@@ -45,6 +53,8 @@ variable "customer_name" {
 
 # # # # # # # # # # # # # # #
 # Security Group Configuration
+# # # # # # # # # # # # # # #
+
 variable "security_group_name" {
   description = "Name of the security group"
   type        = string
