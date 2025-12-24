@@ -1,6 +1,6 @@
 import groovy.json.JsonSlurper
 
-// Helper that performs the Docker Hub API calls and returns a list of tag names.
+// Helper function that communicates with the Docker Hub API and returns a list of tag names for a repository.
 def fetchDockerHubTags(String repoName, String dUser, String dPass) {
     try {
         // 1. Login to get JWT Token
@@ -45,10 +45,7 @@ def fetchDockerHubTags(String repoName, String dUser, String dPass) {
     }
 }
 
-// Top-level helper used by the pipeline parameters. It prefers using Jenkins
-// `withCredentials` if available; if not (e.g. during parameter evaluation in
-// some environments), it falls back to environment variables `DOCKERHUB_USER`
-// and `DOCKERHUB_PASS`.
+// Helper that retrieves Docker Hub tags using Jenkins credentials or environment variables as fallback.
 def getTags(String repoName) {
     try {
         // If the pipeline runtime provides the `withCredentials` step, use it.
@@ -114,7 +111,7 @@ pipeline {
                     pwd
                     ls -la
                     
-                    terraform init
+                    terraform init -input=false
                     
                     terraform plan \
                     -var="customer_name=${params.CUSTOMER_NAME}" \
@@ -162,27 +159,32 @@ pipeline {
                  echo 'Hello World'
             }
         }
+
         stage('Backend Testing') {
             steps {
                 echo 'Hello World'
             }
         }
+
         stage('Configure Frontend') {
             steps {
                  echo 'Hello World'
 
             }
         }
+
         stage('Frontend Testing') {
             steps {
                  echo 'Hello World'
             }
         }
+
         stage('Notify User') {
             steps {
                  echo 'Hello World'
             }
         }
+        
         stage('Cleanup') {
             steps {
                  echo 'Hello World' 
