@@ -10,6 +10,18 @@ terraform {
     }
   }
   required_version = ">= 1.0"
+
+  # BACKEND CONFIGURATION
+  # 1. Create S3 bucket manually (enable versioning)
+  # 2. Create DynamoDB table manually (Partition key: LockID)
+  # 3. Uncomment and update values below:
+  # backend "s3" {
+  #   bucket         = "YOUR-UNIQUE-BUCKET-NAME"
+  #   key            = "domain-monitoring/terraform.tfstate"
+  #   region         = "us-east-2"
+  #   dynamodb_table = "terraform-locks"
+  #   encrypt        = true
+  # }
 }
 
 provider "aws" {
