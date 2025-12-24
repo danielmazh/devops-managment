@@ -38,3 +38,12 @@ output "backend_instance_ids" {
   value       = aws_instance.backend[*].id
 }
 
+output "frontend_instance_names" {
+  description = "Names of the frontend instances"
+  value       = aws_instance.frontend[*].tags.Name
+}
+
+output "backend_instance_names" {
+  description = "Names of the backend instances"
+  value       = aws_instance.backend[*].tags.Name
+}

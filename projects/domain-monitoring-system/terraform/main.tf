@@ -110,7 +110,7 @@ resource "aws_instance" "backend" {
   key_name = var.key_name
   
   tags = {
-    Name        = "${var.customer_name}-backend-${count.index}"
+    Name          = "${var.customer_name}-be${count.index + 1}"
     Instance_role = "backend-service"
   }
 }
@@ -131,7 +131,7 @@ resource "aws_instance" "frontend" {
   key_name = var.key_name
   
   tags = {
-    Name          = "${var.customer_name}-frontend-${count.index}"
+    Name          = "${var.customer_name}-fe${count.index + 1}"
     Instance_role = "frontend-service"
   }
 }
