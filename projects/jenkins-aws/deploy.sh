@@ -3,9 +3,9 @@ set -euo pipefail
 
 # Simple helper to provision EC2 instances with Terraform and then configure them with Ansible.
 # Requirements:
-# - AWS credentials/profile available to Terraform
-# - ansible_aws/aws_ec2.yml inventory is present and resolvable
-# - terraform and ansible-playbook installed
+# - AWS credentials/profile available to Terraform [~/.aws/credentials]
+# - ansible_aws/aws_ec2.yml inventory is present and resolvable [~/ansible_aws/aws_ec2.yml]
+# - terraform and ansible-playbook installed [brew install terraform ansible]
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
