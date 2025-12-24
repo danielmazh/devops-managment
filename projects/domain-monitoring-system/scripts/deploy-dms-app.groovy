@@ -85,6 +85,7 @@ pipeline {
                 echo "Backend Instances: ${params.BACKEND_COUNT}"
             }
         }
+
         stage('Checkout Code') {
             steps {
                 // Remove any leftover clone from previous runs to avoid "destination path already exists"
@@ -102,6 +103,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Trigger iac') {
             steps {
                 // 1. Init and Plan
