@@ -18,7 +18,7 @@ terraform {
   # https://us-east-2.console.aws.amazon.com/dynamodbv2/home?region=us-east-2#table?name=terraform-locks&tab=overview
   # 3. Uncomment and update values below:
   backend "s3" {
-    bucket         = "dms-terraform-state-team-3 "
+    bucket         = "dms-terraform-state-team-3"
     key            = "domain-monitoring/terraform.tfstate"
     region         = "us-east-2"
     dynamodb_table = "terraform-locks"
