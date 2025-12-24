@@ -1,6 +1,6 @@
 ---
 - name: Run Selenium functional tests
-  hosts: test_servers
+  hosts: all
   gather_facts: no  # Optional: disable fact gathering to save time if not needed
   
   tasks:

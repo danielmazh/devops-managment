@@ -103,7 +103,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Trigger iac') {
             steps {
                 // 1. Init and Plan
@@ -158,38 +158,119 @@ pipeline {
 
         stage('Configure Backend') {
             steps {
-                 echo 'Hello World'
+                script {
+                    def backendIps = readJSON text: env.BACKEND_INSTANCE_PUBLIC_IPS
+                    
+                    backendIps.each { ip ->
+                        echo "Waiting for SSH on ${ip}..."
+                        // Wait for SSH port to be open
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitUntil {
+                                def r = sh script: "nc -z -w 5 ${ip} 22", returnStatus: true
+                                return (r == 0)
+                            }
+                        }
+                        
+                        // Run Ansible on the machine
+                        echo "Running Ansible on ${ip}..."
+                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                            sh """
+                                export ANSIBLE_HOST_KEY_CHECKING=False
+                                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/configure_be.yaml
+                            """
+                        }
+                    }
+                }
             }
         }
 
         stage('Backend Testing') {
             steps {
-                echo 'Hello World'
+                // run the test_backend_api.yaml playbook on the backend instances
+                script {
+                    def backendIps = readJSON text: env.BACKEND_INSTANCE_PUBLIC_IPS
+                    backendIps.each { ip ->
+                        echo "Running backend testing on ${ip}..."
+                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                            sh """
+                            ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/test_backend_api.yaml
+                        """
+                        }
+                    }
+                }
             }
         }
 
         stage('Configure Frontend') {
             steps {
-                 echo 'Hello World'
-
+                script {
+                    def frontendIps = readJSON text: env.FRONTEND_INSTANCE_PUBLIC_IPS
+                    
+                    frontendIps.each { ip ->
+                        echo "Waiting for SSH on ${ip}..."
+                        // Wait for SSH port to frontend open
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitUntil {
+                                def r = sh script: "nc -z -w 5 ${ip} 22", returnStatus: true
+                                return (r == 0)
+                            }
+                        }
+                        
+                        // Run Ansible on the machine
+                        echo "Running Ansible on ${ip}..."
+                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                            sh """
+                                export ANSIBLE_HOST_KEY_CHECKING=False
+                                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/configure_fe.yaml
+                            """
+                        }
+                    }
+                }
             }
         }
 
         stage('Frontend Testing') {
             steps {
-                 echo 'Hello World'
+                script {
+                    def frontendIps = readJSON text: env.FRONTEND_INSTANCE_PUBLIC_IPS
+                    
+                    frontendIps.each { ip ->
+                        echo "Running frontend testing on ${ip}..."
+                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                            sh """
+                                export ANSIBLE_HOST_KEY_CHECKING=False
+                                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/test_frontend_selenium.yaml
+                            """
+                        }
+                    }
+                }
             }
         }
 
-        stage('Notify User') {
-            steps {
-                 echo 'Hello World'
-            }
-        }
-        
-        stage('Cleanup') {
-            steps {
-                 echo 'Hello World' 
+    }
+    
+    post {
+        always {
+            script {
+                // Email Notification
+                def subject = "Deployment ${currentBuild.currentResult}: ${params.CUSTOMER_NAME}"
+                def body = """
+                    <h3>Deployment Status: ${currentBuild.currentResult}</h3>
+                    <p><strong>Customer:</strong> ${params.CUSTOMER_NAME}</p>
+                    <p><strong>Backend IPs:</strong> ${env.BACKEND_INSTANCE_PUBLIC_IPS}</p>
+                    <p><strong>Frontend IPs:</strong> ${env.FRONTEND_INSTANCE_PUBLIC_IPS}</p>
+                    <p><strong>Build URL:</strong> <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+                """
+
+                emailext (
+                    subject: subject,
+                    body: body,
+                    to: 'your-email@example.com', // Replace with your actual email or a parameter
+                    mimeType: 'text/html'
+                )
+
+                // Cleanup (moved from stage)
+                echo 'Cleaning up resources...'
             }
         }
     }
