@@ -13,15 +13,17 @@ terraform {
 
   # BACKEND CONFIGURATION
   # 1. Create S3 bucket manually (enable versioning)
+  # https://us-east-2.console.aws.amazon.com/s3/buckets/dms-terraform-state-team-3?region=us-east-2&tab=objects
   # 2. Create DynamoDB table manually (Partition key: LockID)
+  # https://us-east-2.console.aws.amazon.com/dynamodbv2/home?region=us-east-2#table?name=terraform-locks&tab=overview
   # 3. Uncomment and update values below:
-  # backend "s3" {
-  #   bucket         = "YOUR-UNIQUE-BUCKET-NAME"
-  #   key            = "domain-monitoring/terraform.tfstate"
-  #   region         = "us-east-2"
-  #   dynamodb_table = "terraform-locks"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket         = "dms-terraform-state-team-3 "
+    key            = "domain-monitoring/terraform.tfstate"
+    region         = "us-east-2"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
