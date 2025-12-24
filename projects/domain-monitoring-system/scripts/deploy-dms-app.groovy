@@ -110,16 +110,12 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                // Remove any leftover clone from previous runs to avoid "destination path already exists"
-                sh '''
-                    if [ -d devops-managment ]; then
-                        rm -rf devops-managment
-                    fi
-                '''
                 withCredentials([usernamePassword(credentialsId: 'RonGitUser', usernameVariable: 'gUser', passwordVariable: 'gPass')])
                 {
                     sh '''
-                        rm -rf devops-managment
+                        if [ -d devops-managment ]; then
+                            rm -rf devops-managment
+                        fi
                         git clone https://${gUser}:${gPass}@github.com/danielmazh/devops-managment.git
                     '''
                 }
@@ -249,6 +245,7 @@ pipeline {
 
                 // Cleanup workspace
                 echo 'Cleaning up workspace...'
+                sh 'rm -rf devops-managment'
                 cleanWs()
             }
         }
