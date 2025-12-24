@@ -1,0 +1,23 @@
+---
+- name: Run Selenium functional tests
+  hosts: test_servers
+  gather_facts: no  # Optional: disable fact gathering to save time if not needed
+  
+  tasks:
+    - name: Copy domains file to remote
+      ansible.builtin.copy:
+        src: ../scripts/test-selenium/domains.txt
+        dest: /tmp/domains.txt
+        mode: '0644'
+
+    - name: Execute domain testing script
+      ansible.builtin.script: ../scripts/test-selenium/app.py
+      args:
+        executable: python3
+      register: test_result
+      ignore_errors: yes  # Continue to print output even if test fails
+
+    - name: Print test output
+      ansible.builtin.debug:
+        var: test_result.stdout_lines
+
