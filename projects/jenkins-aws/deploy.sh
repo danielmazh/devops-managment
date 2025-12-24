@@ -11,6 +11,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==> Checking prerequisites"
 command -v terraform >/dev/null 2>&1 || { echo "terraform not found in PATH"; exit 1; }
+
+echo "==> Installing Python requirements"
+pip3 install -r "$ROOT_DIR/requirements.txt"
+
 command -v ansible-playbook >/dev/null 2>&1 || { echo "ansible-playbook not found in PATH"; exit 1; }
 
 echo "==> Running Terraform (init + apply)"
