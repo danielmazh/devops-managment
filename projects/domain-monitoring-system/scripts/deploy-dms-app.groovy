@@ -60,19 +60,40 @@ def getTags(String repoName) {
     }
 }
 
+// Helper that runs an Ansible playbook on a list of IPs
+def runAnsibleOnIps(String ipsJson, String playbookPath) {
+    def ips = new groovy.json.JsonSlurper().parseText(ipsJson)
+    ips.each { ip ->
+        echo "Processing ${ip}..."
+        // Wait for SSH port to be open
+        timeout(time: 5, unit: 'MINUTES') {
+            waitUntil {
+                def r = sh script: "nc -z -w 5 ${ip} 22", returnStatus: true
+                return (r == 0)
+            }
+        }
+        
+        echo "Running Ansible on ${ip}..."
+        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+            sh """
+                export ANSIBLE_HOST_KEY_CHECKING=False
+                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY ${playbookPath}
+            """
+        }
+    }
+}
+
 pipeline {
     agent {label "jenkins-slave-team-3-new"}
 
     parameters {
-        // Note: The 'getTags' function runs on the Jenkins Controller when the pipeline is loaded.
-        // If security sandbox is enabled, you may need to approve the signatures in "In-process Script Approval".
-        // Replace 'mailguard-platform' with your actual repository name or make it dynamic if feasible.
         choice(name: 'BACKEND_VERSION', choices: getTags("dms-be"), description: 'Select a tag from Docker Hub')
         choice(name: 'FRONTEND_VERSION', choices: getTags("dms-fe"), description: 'Select a tag from Docker Hub')
-
         string(name: 'CUSTOMER_NAME', defaultValue: 'test_customer', description: 'Enter customer name')
         choice(name: 'FRONTEND_COUNT', choices: ['1','2','3'], description: 'Number of frontend instances')
         choice(name: 'BACKEND_COUNT', choices: ['1'], description: 'Number of backend instances')
+        string(name: 'EMAIL_RECIPIENT', defaultValue: 'your-email@example.com', description: 'Email for notifications')
+        booleanParam(name: 'SKIP_TERRAFORM', defaultValue: false, description: 'Skip Terraform Apply (Use existing infrastructure)')
     }
 
     stages {
@@ -83,6 +104,7 @@ pipeline {
                 echo "Name: ${params.CUSTOMER_NAME}"
                 echo "Frontend Instances: ${params.FRONTEND_COUNT}"
                 echo "Backend Instances: ${params.BACKEND_COUNT}"
+                echo "Skip Terraform: ${params.SKIP_TERRAFORM}"
             }
         }
 
@@ -106,38 +128,53 @@ pipeline {
 
         stage('Trigger iac') {
             steps {
-                // 1. Init and Plan
-                sh """
-                    pwd
-                    cd devops-managment/projects/domain-monitoring-system/terraform
-                    pwd
-                    ls -la
-                    
-                    terraform init -input=false
-                    
-                    terraform plan \
-                    -var="customer_name=${params.CUSTOMER_NAME}" \
-                    -var="backend_instance_count=${params.BACKEND_COUNT}" \
-                    -var="frontend_instance_count=${params.FRONTEND_COUNT}"
-                """
-
-                // 2. Pause for User Validation
-                input message: 'Review the plan above. Approve Apply?', ok: 'Deploy'
-
-                // 3. Apply (Keep -auto-approve so the command doesn't hang)
-                sh """
-                    cd devops-managment/projects/domain-monitoring-system/terraform
-                    
-                    terraform apply \
-                    -var="customer_name=${params.CUSTOMER_NAME}" \
-                    -var="backend_instance_count=${params.BACKEND_COUNT}" \
-                    -var="frontend_instance_count=${params.FRONTEND_COUNT}" \
-                    -auto-approve
-                """
-
-                // Wrap the following Groovy logic in a `script` block so
-                // method calls and variable assignments are allowed.
                 script {
+                    if (!params.SKIP_TERRAFORM) {
+                        // 1. Init and Plan
+                        sh """
+                            pwd
+                            cd devops-managment/projects/domain-monitoring-system/terraform
+                            pwd
+                            ls -la
+                            
+                            terraform init -input=false
+                            
+                            terraform plan \
+                            -var="customer_name=${params.CUSTOMER_NAME}" \
+                            -var="backend_instance_count=${params.BACKEND_COUNT}" \
+                            -var="frontend_instance_count=${params.FRONTEND_COUNT}"
+                        """
+
+                        // 2. Pause for User Validation
+                        input message: 'Review the plan above. Approve Apply?', ok: 'Deploy'
+
+                        // 3. Apply (Keep -auto-approve so the command doesn't hang)
+                        sh """
+                            cd devops-managment/projects/domain-monitoring-system/terraform
+                            
+                            terraform apply \
+                            -var="customer_name=${params.CUSTOMER_NAME}" \
+                            -var="backend_instance_count=${params.BACKEND_COUNT}" \
+                            -var="frontend_instance_count=${params.FRONTEND_COUNT}" \
+                            -auto-approve
+                        """
+                    } else {
+                        echo "Skipping Terraform Apply. Fetching outputs from existing state..."
+                        // Ensure we have the state file or can access the backend
+                        sh """
+                            cd devops-managment/projects/domain-monitoring-system/terraform
+                            terraform init -input=false
+                            # We might need to refresh state if we want up-to-date outputs
+                            terraform refresh \
+                            -var="customer_name=${params.CUSTOMER_NAME}" \
+                            -var="backend_instance_count=${params.BACKEND_COUNT}" \
+                            -var="frontend_instance_count=${params.FRONTEND_COUNT}"
+                        """
+                    }
+
+                    // Wrap the following Groovy logic in a `script` block so
+                    // method calls and variable assignments are allowed.
+                    
                     // 1. Get the JSON string from Terraform
                     def tfOutputString = sh(script: """
                         cd devops-managment/projects/domain-monitoring-system/terraform
@@ -159,44 +196,15 @@ pipeline {
         stage('Configure Backend') {
             steps {
                 script {
-                    def backendIps = readJSON text: env.BACKEND_INSTANCE_PUBLIC_IPS
-                    
-                    backendIps.each { ip ->
-                        echo "Waiting for SSH on ${ip}..."
-                        // Wait for SSH port to be open
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                def r = sh script: "nc -z -w 5 ${ip} 22", returnStatus: true
-                                return (r == 0)
-                            }
-                        }
-                        
-                        // Run Ansible on the machine
-                        echo "Running Ansible on ${ip}..."
-                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                            sh """
-                                export ANSIBLE_HOST_KEY_CHECKING=False
-                                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/configure_be.yaml
-                            """
-                        }
-                    }
+                    runAnsibleOnIps(env.BACKEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/configure_be.yaml')
                 }
             }
         }
 
         stage('Backend Testing') {
             steps {
-                // run the test_backend_api.yaml playbook on the backend instances
                 script {
-                    def backendIps = readJSON text: env.BACKEND_INSTANCE_PUBLIC_IPS
-                    backendIps.each { ip ->
-                        echo "Running backend testing on ${ip}..."
-                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                            sh """
-                            ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/test_backend_api.yaml
-                        """
-                        }
-                    }
+                    runAnsibleOnIps(env.BACKEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/test_backend_api.yaml')
                 }
             }
         }
@@ -204,27 +212,7 @@ pipeline {
         stage('Configure Frontend') {
             steps {
                 script {
-                    def frontendIps = readJSON text: env.FRONTEND_INSTANCE_PUBLIC_IPS
-                    
-                    frontendIps.each { ip ->
-                        echo "Waiting for SSH on ${ip}..."
-                        // Wait for SSH port to frontend open
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                def r = sh script: "nc -z -w 5 ${ip} 22", returnStatus: true
-                                return (r == 0)
-                            }
-                        }
-                        
-                        // Run Ansible on the machine
-                        echo "Running Ansible on ${ip}..."
-                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                            sh """
-                                export ANSIBLE_HOST_KEY_CHECKING=False
-                                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/configure_fe.yaml
-                            """
-                        }
-                    }
+                    runAnsibleOnIps(env.FRONTEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/configure_fe.yaml')
                 }
             }
         }
@@ -232,17 +220,7 @@ pipeline {
         stage('Frontend Testing') {
             steps {
                 script {
-                    def frontendIps = readJSON text: env.FRONTEND_INSTANCE_PUBLIC_IPS
-                    
-                    frontendIps.each { ip ->
-                        echo "Running frontend testing on ${ip}..."
-                        withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                            sh """
-                                export ANSIBLE_HOST_KEY_CHECKING=False
-                                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY devops-managment/projects/domain-monitoring-system/ansible/test_frontend_selenium.yaml
-                            """
-                        }
-                    }
+                    runAnsibleOnIps(env.FRONTEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/test_frontend_selenium.yaml')
                 }
             }
         }
@@ -265,12 +243,13 @@ pipeline {
                 emailext (
                     subject: subject,
                     body: body,
-                    to: 'your-email@example.com', // Replace with your actual email or a parameter
+                    to: params.EMAIL_RECIPIENT,
                     mimeType: 'text/html'
                 )
 
-                // Cleanup (moved from stage)
-                echo 'Cleaning up resources...'
+                // Cleanup workspace
+                echo 'Cleaning up workspace...'
+                cleanWs()
             }
         }
     }
