@@ -61,7 +61,7 @@ def getTags(String repoName) {
 }
 
 // Helper that runs an Ansible playbook on a list of IPs
-def runAnsibleOnIps(String ipsJson, String playbookPath) {
+def runAnsibleOnIps(String ipsJson, String playbookPath, String extraVars = "") {
     def ips = new groovy.json.JsonSlurper().parseText(ipsJson)
     ips.each { ip ->
         echo "Processing ${ip}..."
@@ -77,7 +77,7 @@ def runAnsibleOnIps(String ipsJson, String playbookPath) {
         withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
             sh """
                 export ANSIBLE_HOST_KEY_CHECKING=False
-                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY ${playbookPath}
+                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY ${playbookPath} ${extraVars}
             """
         }
     }
@@ -221,7 +221,10 @@ pipeline {
         stage('Configure Backend') {
             steps {
                 script {
-                    runAnsibleOnIps(env.BACKEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/configure_be.yaml')
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-ron-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        def extraVars = "-e 'docker_user=${DOCKER_USER} docker_password=${DOCKER_PASSWORD} backend_version=${params.BACKEND_VERSION}'"
+                        runAnsibleOnIps(env.BACKEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/configure_be.yaml', extraVars)
+                    }
                 }
             }
         }

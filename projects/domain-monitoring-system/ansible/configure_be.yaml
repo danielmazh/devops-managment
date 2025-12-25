@@ -1,0 +1,40 @@
+---
+- name: Configure Backend Application
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Log in to Docker Hub
+      ansible.builtin.shell: "docker login -u {{ docker_user }} -p {{ docker_password }}"
+      register: docker_login_result
+      changed_when: false
+      no_log: true
+
+    - name: Pull Backend Image
+      ansible.builtin.shell: "docker pull {{ docker_user }}/dms-be:{{ backend_version }}"
+      register: docker_pull_result
+
+    - name: Check if dms-be container exists
+      ansible.builtin.shell: "docker ps -aq -f name=dms-be"
+      register: existing_container
+      changed_when: false
+
+    - name: Stop and remove existing dms-be container
+      ansible.builtin.shell: "docker stop dms-be && docker rm dms-be"
+      when: existing_container.stdout != ""
+
+    - name: Run Backend Container
+      ansible.builtin.shell: "docker run -d -p 8080:8080 --name dms-be {{ docker_user }}/dms-be:{{ backend_version }}"
+      register: docker_run_result
+
+    - name: Wait for the app to be ready
+      ansible.builtin.uri:
+        url: "http://localhost:8080"
+        status_code: [200, 302]
+        return_content: no
+      register: app_ready
+      until: app_ready.status == 200 or app_ready.status == 302
+      retries: 20
+      delay: 5
+
