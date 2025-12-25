@@ -58,7 +58,6 @@ pipeline {
     agent { label "jenkins-slave-team-3-new" }
 
     options {
-        ansiColor('xterm')
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
 
