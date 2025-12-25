@@ -259,7 +259,7 @@ pipeline {
                 // Cleanup workspace
                 echo 'Cleaning up workspace...'
                 sh 'rm -rf devops-managment'
-                cleanWs()
+                deleteDir()
             }
         }
     }
