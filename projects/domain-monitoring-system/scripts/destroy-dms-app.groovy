@@ -101,18 +101,29 @@ pipeline {
 
         stage('Terraform Destroy') {
             steps {
-                // Initialize and Destroy
-                sh """
-                    cd devops-managment/projects/domain-monitoring-system/terraform
-                    
-                    echo "Initializing Terraform..."
-                    terraform init -input=false
-                    
-                    echo "Running Terraform Destroy for customer: ${params.CUSTOMER_NAME}"
-                    terraform destroy \
-                    -var="customer_name=${params.CUSTOMER_NAME}" \
-                    -auto-approve
-                """
+                withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                                                 usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                                 passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    script {
+                        def awsRegion = env.AWS_DEFAULT_REGION ?: 'us-east-2'
+                        // Initialize and Destroy
+                        sh """
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${awsRegion}
+
+                            cd devops-managment/projects/domain-monitoring-system/terraform
+                            
+                            echo "Initializing Terraform..."
+                            terraform init -input=false
+                            
+                            echo "Running Terraform Destroy for customer: ${params.CUSTOMER_NAME}"
+                            terraform destroy \
+                            -var="customer_name=${params.CUSTOMER_NAME}" \
+                            -auto-approve
+                        """
+                    }
+                }
             }
         }
     }
@@ -122,10 +133,10 @@ pipeline {
             cleanWs()
         }
         success {
-            echo "✅ Environment for ${params.CUSTOMER_NAME} has been successfully destroyed."
+            echo "Environment for ${params.CUSTOMER_NAME} has been successfully destroyed."
         }
         failure {
-            echo "❌ Destruction failed. Please check the logs."
+            echo "Destruction failed. Please check the logs."
         }
     }
 }
