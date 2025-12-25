@@ -207,7 +207,8 @@ pipeline {
                     }
 
                     // 2. Parse the JSON string into a Groovy object
-                    def outputs = readJSON text: tfOutputString
+                    // def outputs = readJSON text: tfOutputString
+                     def outputs = new JsonSlurper().parseText(tfOutputString)
 
                     // 3. Loop through outputs and set them as global environment variables
                     outputs.each { key, data ->
