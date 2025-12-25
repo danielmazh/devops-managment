@@ -30,6 +30,10 @@ provider "aws" {
   region = var.aws_region
 }
 
+locals {
+  customer_name_sanitized = replace(var.customer_name, "_", "-")
+}
+
 # # # # # # # # # # # # # # #
 # Data Sources (VPC & Subnets)
 # # # # # # # # # # # # # # #
@@ -141,7 +145,7 @@ resource "aws_instance" "frontend" {
 # # # # # # # # # # # # # # #
 
 resource "aws_lb" "frontend_alb" {
-  name               = "${var.customer_name}-fe-alb"
+  name               = "${local.customer_name_sanitized}-fe-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.app_sg.id]
@@ -153,7 +157,7 @@ resource "aws_lb" "frontend_alb" {
 }
 
 resource "aws_lb_target_group" "frontend_tg" {
-  name     = "${var.customer_name}-fe-tg"
+  name     = "${local.customer_name_sanitized}-fe-tg"
   port     = var.app_port
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
@@ -195,7 +199,7 @@ resource "aws_lb_target_group_attachment" "frontend_attach" {
 # # # # # # # # # # # # # # #
 
 resource "aws_lb" "backend_alb" {
-  name               = "${var.customer_name}-be-alb"
+  name               = "${local.customer_name_sanitized}-be-alb"
   internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.app_sg.id]
@@ -207,7 +211,7 @@ resource "aws_lb" "backend_alb" {
 }
 
 resource "aws_lb_target_group" "backend_tg" {
-  name     = "${var.customer_name}-be-tg"
+  name     = "${local.customer_name_sanitized}-be-tg"
   port     = var.app_port
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
