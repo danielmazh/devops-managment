@@ -202,7 +202,8 @@ pipeline {
                             export AWS_DEFAULT_REGION=${awsRegion}
 
                             cd devops-managment/projects/domain-monitoring-system/terraform
-                            terraform output -json
+                            terraform output -json > output.json
+                            cat output.json
                         """, returnStdout: true).trim()
                     }
 
