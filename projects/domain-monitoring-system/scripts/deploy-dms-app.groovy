@@ -49,7 +49,7 @@ def fetchDockerHubTags(String repoName, String dUser, String dPass) {
 def getTags(String repoName) {
     try {
         // If the pipeline runtime provides the `withCredentials` step, use it.
-        return withCredentials([usernamePassword(credentialsId: 'docker-hub-token', usernameVariable: 'dUser', passwordVariable: 'dPass')]) {
+        return withCredentials([usernamePassword(credentialsId: 'docker-hub-ron-token', usernameVariable: 'dUser', passwordVariable: 'dPass')]) {
             return fetchDockerHubTags(repoName, dUser, dPass)
         }
     } catch (MissingMethodException | NoSuchMethodError e) {
@@ -87,8 +87,8 @@ pipeline {
     agent {label "jenkins-slave-team-3-new"}
 
     parameters {
-        choice(name: 'BACKEND_VERSION', choices: getTags("domain-monitoring-system"), description: 'Select a tag from Docker Hub')
-        choice(name: 'FRONTEND_VERSION', choices: getTags("domain-monitoring-system"), description: 'Select a tag from Docker Hub')
+        choice(name: 'BACKEND_VERSION', choices: getTags("dms-be"), description: 'Select a tag from Docker Hub')
+        choice(name: 'FRONTEND_VERSION', choices: getTags("dms-fe"), description: 'Select a tag from Docker Hub')
         string(name: 'CUSTOMER_NAME', defaultValue: 'test_customer', description: 'Enter customer name')
         choice(name: 'FRONTEND_COUNT', choices: ['1','2','3'], description: 'Number of frontend instances')
         choice(name: 'BACKEND_COUNT', choices: ['1'], description: 'Number of backend instances')

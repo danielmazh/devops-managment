@@ -59,6 +59,12 @@ credentials:
               username: "${DOCKER_HUB_USERNAME}"
               password: "${DOCKER_HUB_PASSWORD}"
           - usernamePassword:
+              id: "docker-hub-ron-token"
+              scope: GLOBAL
+              description: "docker-hub-ron-token"
+              username: "${DOCKER_HUB_RON_USER}"
+              password: "${DOCKER_HUB_RON_PASSWORD}"
+          - usernamePassword:
               id: "aws-creds"
               scope: GLOBAL
               description: "AWS credentials for Terraform"
