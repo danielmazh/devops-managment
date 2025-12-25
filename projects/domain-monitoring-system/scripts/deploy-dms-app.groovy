@@ -190,10 +190,21 @@ pipeline {
                     // method calls and variable assignments are allowed.
                     
                     // 1. Get the JSON string from Terraform
-                    def tfOutputString = sh(script: """
-                        cd devops-managment/projects/domain-monitoring-system/terraform
-                        terraform output -json
-                    """, returnStdout: true).trim()
+                    def tfOutputString = ""
+                    withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                                                     usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                                     passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        def awsRegion = env.AWS_DEFAULT_REGION ?: 'us-east-2'
+                        
+                        tfOutputString = sh(script: """
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=${awsRegion}
+
+                            cd devops-managment/projects/domain-monitoring-system/terraform
+                            terraform output -json
+                        """, returnStdout: true).trim()
+                    }
 
                     // 2. Parse the JSON string into a Groovy object
                     def outputs = readJSON text: tfOutputString
