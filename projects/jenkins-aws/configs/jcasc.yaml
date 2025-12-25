@@ -76,7 +76,7 @@ credentials:
 unclassified:
   location:
     adminAddress: "team3jenkins@no-reply.com"
-    url: "http://localhost:8080/"
+    url: "${JENKINS_URL}"
   mailer:
     smtpHost: "smtp.gmail.com"
     smtpPort: 587

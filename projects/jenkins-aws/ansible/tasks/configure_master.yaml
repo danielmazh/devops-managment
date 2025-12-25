@@ -137,7 +137,7 @@
 
 # Start Jenkins container
 - name: Run Jenkins Container
-  ansible.builtin.shell: "docker run -d --name jenkins-jcasc -p 8080:8080 -p 50000:50000 -v /var/jenkins_home:/var/jenkins_home -e CASC_JENKINS_CONFIG=/var/jenkins_home/jcasc.yaml -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\" --env-file /var/jenkins_home/jenkins.env danielmazh/jenkins:0.0.2"
+  ansible.builtin.shell: "docker run -d --name jenkins-jcasc -p 8080:8080 -p 50000:50000 -v /var/jenkins_home:/var/jenkins_home -e CASC_JENKINS_CONFIG=/var/jenkins_home/jcasc.yaml -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\" -e JENKINS_URL=\"http://{{ public_ip_shell.stdout.strip() }}:8080/\" --env-file /var/jenkins_home/jenkins.env danielmazh/jenkins:0.0.2"
   register: docker_run_result
 
 # Wait for Jenkins initialization
