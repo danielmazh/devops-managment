@@ -52,16 +52,17 @@
       ansible.builtin.setup:
 
   tasks:
-    - name: Pick master host (first in group, unless overridden)
-      ansible.builtin.set_fact:
-        selected_master: "{{ target_master | default(groups['jenkins_master'][0]) }}"
+    - name: Ensure a master with an IP fact exists
+      ansible.builtin.fail:
+        msg: "No jenkins_master host has jenkins_master_ip_var defined. Ensure master play completed successfully."
+      when: (groups['jenkins_master'] | map('extract', hostvars, 'jenkins_master_ip_var') | select('string') | list | length) == 0
       run_once: true
 
     - name: Import Slave Tasks
       include_tasks: tasks/configure_slave.yaml
       vars:
-        master_public_ip: "{{ hostvars[selected_master].jenkins_master_ip_var }}"
-        jnlp_secret: "{{ hostvars[selected_master].jenkins_slave_jnlp_secret }}"
+        master_public_ip: "{{ (groups['jenkins_master'] | map('extract', hostvars, 'jenkins_master_ip_var') | select('string') | list | first) }}"
+        jnlp_secret: "{{ (groups['jenkins_master'] | map('extract', hostvars, 'jenkins_slave_jnlp_secret') | select('string') | list | first) }}"
 
 # PLAY 3: Create GitHub Webhook to Jenkins
 # Requires: define github_token (PAT with repo:admin or appropriate scopes)
