@@ -47,17 +47,16 @@ credentials:
 
 unclassified:
   location:
-    adminAddress: "team3jenkins@no-replay.com"
+    adminAddress: "team3jenkins@no-reply.com"
     url: "http://localhost:8080/"
   mailer:
     smtpHost: "smtp.gmail.com"
-    smtpPort: "587"
-    useSsl: true
+    smtpPort: 587
+    useTls: true
     authentication:
-      usernamePassword:
-        username: "${SMTP_USERNAME}"
-        password: "${SMTP_PASSWORD}"
-    replyToAddress: "team3jenkins@no-replay.com"
+      username: "${SMTP_USERNAME}"
+      password: "${SMTP_PASSWORD}"
+    replyToAddress: "team3jenkins@no-reply.com"
   extendedEmailPublisher:
     adminRequiredForTemplateTesting: false
     allowUnregisteredEnabled: true
@@ -70,15 +69,8 @@ unclassified:
     defaultSubject: "$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!"
     defaultSuffix: "@gmail.com"
     maxAttachmentSize: -1
-    recipientList: "coperman12@gmail.com, daniel.mazhbits@gmail.com"
-    smtpServer: "smtp.gmail.com"
-    smtpPort: "587"
-    useSsl: true
+    defaultRecipients: "coperman12@gmail.com, daniel.mazhbits@gmail.com"
     watchingEnabled: true
-    auth:
-      usernamePassword:
-        username: "${SMTP_USERNAME}"
-        password: "${SMTP_PASSWORD}"
 
 jobs:
   - script: |
