@@ -49,7 +49,7 @@ def fetchDockerHubTags(String repoName, String dUser, String dPass) {
 def getTags(String repoName) {
     try {
         // If the pipeline runtime provides the `withCredentials` step, use it.
-        return withCredentials([usernamePassword(credentialsId: 'RonDockerUser', usernameVariable: 'dUser', passwordVariable: 'dPass')]) {
+        return withCredentials([usernamePassword(credentialsId: 'docker-hub-token', usernameVariable: 'dUser', passwordVariable: 'dPass')]) {
             return fetchDockerHubTags(repoName, dUser, dPass)
         }
     } catch (MissingMethodException | NoSuchMethodError e) {
@@ -110,7 +110,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'RonGitUser', usernameVariable: 'gUser', passwordVariable: 'gPass')])
+                withCredentials([usernamePassword(credentialsId: 'git-new-new', usernameVariable: 'gUser', passwordVariable: 'gPass')])
                 {
                     sh '''
                         if [ -d devops-managment ]; then
