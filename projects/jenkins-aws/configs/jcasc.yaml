@@ -164,3 +164,44 @@ jobs:
           email.appendNode('contentType', 'default')
         }
       }
+
+      pipelineJob('dms-destroy-app') {
+        description('Destroy Domain Monitoring System')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/danielmazh/devops-managment.git')
+                  credentials('git-new-new')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('projects/domain-monitoring-system/scripts/destroy-dms-app.groovy')
+            lightweight(true)
+          }
+        }
+        configure { project ->
+          def mail = project / 'publishers' / 'hudson.plugins.emailext.ExtendedEmailPublisher'
+          mail.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
+          mail.appendNode('defaultSubject', '$DEFAULT_SUBJECT')
+          mail.appendNode('defaultContent', '$DEFAULT_CONTENT')
+          mail.appendNode('contentType', 'default')
+          def triggers = mail.appendNode('configuredTriggers')
+          def failure = triggers.appendNode('hudson.plugins.emailext.plugins.trigger.FailureTrigger')
+          def email = failure.appendNode('email')
+          email.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
+          email.appendNode('subject', '$DEFAULT_SUBJECT')
+          email.appendNode('body', '$DEFAULT_CONTENT')
+          email.appendNode('sendToDevelopers', false)
+          email.appendNode('sendToRequester', false)
+          email.appendNode('includeCulprits', true)
+          email.appendNode('sendToRecipientList', true)
+          email.appendNode('attachmentsPattern', '')
+          email.appendNode('attachBuildLog', false)
+          email.appendNode('compressBuildLog', false)
+          email.appendNode('replyTo', '$DEFAULT_REPLYTO')
+          email.appendNode('contentType', 'default')
+        }
+      }
