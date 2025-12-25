@@ -140,7 +140,7 @@ pipeline {
                                 export AWS_DEFAULT_REGION=${awsRegion}
 
                                 cd devops-managment/projects/domain-monitoring-system/terraform
-                                terraform init -input=false
+                                terraform init -input=false -backend-config="key=domain-monitoring/${params.CUSTOMER_NAME}.tfstate"
                                 terraform plan \
                                   -var="customer_name=${params.CUSTOMER_NAME}" \
                                   -var="backend_instance_count=${params.BACKEND_COUNT}" \
@@ -176,7 +176,7 @@ pipeline {
                                 export AWS_DEFAULT_REGION=${awsRegion}
 
                                 cd devops-managment/projects/domain-monitoring-system/terraform
-                                terraform init -input=false
+                                terraform init -input=false -backend-config="key=domain-monitoring/${params.CUSTOMER_NAME}.tfstate"
                                 # We might need to refresh state if we want up-to-date outputs
                                 terraform refresh \
                                   -var="customer_name=${params.CUSTOMER_NAME}" \

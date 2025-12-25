@@ -19,7 +19,7 @@ terraform {
   # 3. Uncomment and update values below:
   backend "s3" {
     bucket         = "dms-terraform-state-team-3"
-    key            = "domain-monitoring/terraform.tfstate"
+    # key          = "domain-monitoring/terraform.tfstate" # Provided dynamically via -backend-config
     region         = "us-east-2"
     dynamodb_table = "terraform-locks"
     encrypt        = true

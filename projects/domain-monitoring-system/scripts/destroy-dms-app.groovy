@@ -115,7 +115,7 @@ pipeline {
                             cd devops-managment/projects/domain-monitoring-system/terraform
                             
                             echo "Initializing Terraform..."
-                            terraform init -input=false
+                            terraform init -input=false -backend-config="key=domain-monitoring/${params.CUSTOMER_NAME}.tfstate"
                             
                             echo "Running Terraform Destroy for customer: ${params.CUSTOMER_NAME}"
                             terraform destroy \

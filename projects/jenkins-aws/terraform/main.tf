@@ -11,7 +11,7 @@ terraform {
 
   backend "s3" {
     bucket         = "dms-terraform-state-team-3"
-    key            = "domain-monitoring/terraform.tfstate"
+    key            = "jenkins-infrastructure/terraform.tfstate"
     region         = "us-east-2"
     dynamodb_table = "terraform-locks"
     encrypt        = true
