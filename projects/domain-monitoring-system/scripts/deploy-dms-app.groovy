@@ -95,6 +95,7 @@ def runAnsibleOnIps(String ipsJson, String playbookPath, String extraVars = "") 
         withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
             sh """
                 export ANSIBLE_HOST_KEY_CHECKING=False
+                chmod 600 \$SSH_KEY
                 ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY ${playbookPath} ${extraVars}
             """
         }
