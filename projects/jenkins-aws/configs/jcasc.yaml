@@ -28,6 +28,20 @@ jenkins:
               workDirPath: "/var/jenkins_home"
               failIfWorkDirIsMissing: false
 
+security:
+  scriptApproval:
+    approvedSignatures:
+      - "method java.net.URL openConnection"
+      - "method java.net.HttpURLConnection setRequestMethod java.lang.String"
+      - "method groovy.lang.GString getBytes java.lang.String"
+      - "method java.io.OutputStream write byte[]"
+      - "method java.net.HttpURLConnection getResponseCode"
+      - "method java.net.URLConnection getInputStream"
+      - "method java.net.URLConnection getOutputStream"
+      - "method java.net.URLConnection setDoOutput boolean"
+      - "method java.net.URLConnection setRequestProperty java.lang.String java.lang.String"
+      - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getText java.io.InputStream"
+
 credentials:
   system:
     domainCredentials:
@@ -115,19 +129,26 @@ jobs:
             lightweight(true)
           }
         }
-        publishers {
-          extendedEmail {
-            recipientList('$DEFAULT_RECIPIENTS')
-            triggers {
-              failure {
-                subject('$DEFAULT_SUBJECT')
-                content('$DEFAULT_CONTENT')
-                sendTo {
-                  recipientList()
-                  culprits()
-                }
-              }
-            }
-          }
+        configure { project ->
+          def mail = project / 'publishers' / 'hudson.plugins.emailext.ExtendedEmailPublisher'
+          mail.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
+          mail.appendNode('defaultSubject', '$DEFAULT_SUBJECT')
+          mail.appendNode('defaultContent', '$DEFAULT_CONTENT')
+          mail.appendNode('contentType', 'default')
+          def triggers = mail.appendNode('configuredTriggers')
+          def failure = triggers.appendNode('hudson.plugins.emailext.plugins.trigger.FailureTrigger')
+          def email = failure.appendNode('email')
+          email.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
+          email.appendNode('subject', '$DEFAULT_SUBJECT')
+          email.appendNode('body', '$DEFAULT_CONTENT')
+          email.appendNode('sendToDevelopers', false)
+          email.appendNode('sendToRequester', false)
+          email.appendNode('includeCulprits', true)
+          email.appendNode('sendToRecipientList', true)
+          email.appendNode('attachmentsPattern', '')
+          email.appendNode('attachBuildLog', false)
+          email.appendNode('compressBuildLog', false)
+          email.appendNode('replyTo', '$DEFAULT_REPLYTO')
+          email.appendNode('contentType', 'default')
         }
       }
