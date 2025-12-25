@@ -87,8 +87,8 @@ pipeline {
     agent {label "jenkins-slave-team-3-new"}
 
     parameters {
-        choice(name: 'BACKEND_VERSION', choices: getTags("dms-be"), description: 'Select a tag from Docker Hub')
-        choice(name: 'FRONTEND_VERSION', choices: getTags("dms-fe"), description: 'Select a tag from Docker Hub')
+        choice(name: 'BACKEND_VERSION', choices: getTags("domain-monitoring-system"), description: 'Select a tag from Docker Hub')
+        choice(name: 'FRONTEND_VERSION', choices: getTags("domain-monitoring-system"), description: 'Select a tag from Docker Hub')
         string(name: 'CUSTOMER_NAME', defaultValue: 'test_customer', description: 'Enter customer name')
         choice(name: 'FRONTEND_COUNT', choices: ['1','2','3'], description: 'Number of frontend instances')
         choice(name: 'BACKEND_COUNT', choices: ['1'], description: 'Number of backend instances')
