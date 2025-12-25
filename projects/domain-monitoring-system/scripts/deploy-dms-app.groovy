@@ -125,47 +125,61 @@ pipeline {
         stage('Trigger iac') {
             steps {
                 script {
-                    if (!params.SKIP_TERRAFORM) {
-                        // 1. Init and Plan
-                        sh """
-                            pwd
-                            cd devops-managment/projects/domain-monitoring-system/terraform
-                            pwd
-                            ls -la
-                            
-                            terraform init -input=false
-                            
-                            terraform plan \
-                            -var="customer_name=${params.CUSTOMER_NAME}" \
-                            -var="backend_instance_count=${params.BACKEND_COUNT}" \
-                            -var="frontend_instance_count=${params.FRONTEND_COUNT}"
-                        """
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                      credentialsId: 'aws-creds',
+                                      accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                                      secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
 
-                        // 2. Pause for User Validation
-                        input message: 'Review the plan above. Approve Apply?', ok: 'Deploy'
+                        def awsRegion = env.AWS_DEFAULT_REGION ?: 'us-east-2'
 
-                        // 3. Apply (Keep -auto-approve so the command doesn't hang)
-                        sh """
-                            cd devops-managment/projects/domain-monitoring-system/terraform
-                            
-                            terraform apply \
-                            -var="customer_name=${params.CUSTOMER_NAME}" \
-                            -var="backend_instance_count=${params.BACKEND_COUNT}" \
-                            -var="frontend_instance_count=${params.FRONTEND_COUNT}" \
-                            -auto-approve
-                        """
-                    } else {
-                        echo "Skipping Terraform Apply. Fetching outputs from existing state..."
-                        // Ensure we have the state file or can access the backend
-                        sh """
-                            cd devops-managment/projects/domain-monitoring-system/terraform
-                            terraform init -input=false
-                            # We might need to refresh state if we want up-to-date outputs
-                            terraform refresh \
-                            -var="customer_name=${params.CUSTOMER_NAME}" \
-                            -var="backend_instance_count=${params.BACKEND_COUNT}" \
-                            -var="frontend_instance_count=${params.FRONTEND_COUNT}"
-                        """
+                        if (!params.SKIP_TERRAFORM) {
+                            // 1. Init and Plan
+                            sh """
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_DEFAULT_REGION=${awsRegion}
+
+                                cd devops-managment/projects/domain-monitoring-system/terraform
+                                terraform init -input=false
+                                terraform plan \
+                                  -var="customer_name=${params.CUSTOMER_NAME}" \
+                                  -var="backend_instance_count=${params.BACKEND_COUNT}" \
+                                  -var="frontend_instance_count=${params.FRONTEND_COUNT}"
+                            """
+
+                            // 2. Pause for User Validation
+                            input message: 'Review the plan above. Approve Apply?', ok: 'Deploy'
+
+                            // 3. Apply (Keep -auto-approve so the command doesn't hang)
+                            sh """
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_DEFAULT_REGION=${awsRegion}
+
+                                cd devops-managment/projects/domain-monitoring-system/terraform
+                                terraform apply \
+                                  -var="customer_name=${params.CUSTOMER_NAME}" \
+                                  -var="backend_instance_count=${params.BACKEND_COUNT}" \
+                                  -var="frontend_instance_count=${params.FRONTEND_COUNT}" \
+                                  -auto-approve
+                            """
+                        } else {
+                            echo "Skipping Terraform Apply. Fetching outputs from existing state..."
+                            // Ensure we have the state file or can access the backend
+                            sh """
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_DEFAULT_REGION=${awsRegion}
+
+                                cd devops-managment/projects/domain-monitoring-system/terraform
+                                terraform init -input=false
+                                # We might need to refresh state if we want up-to-date outputs
+                                terraform refresh \
+                                  -var="customer_name=${params.CUSTOMER_NAME}" \
+                                  -var="backend_instance_count=${params.BACKEND_COUNT}" \
+                                  -var="frontend_instance_count=${params.FRONTEND_COUNT}"
+                            """
+                        }
                     }
 
                     // Wrap the following Groovy logic in a `script` block so
