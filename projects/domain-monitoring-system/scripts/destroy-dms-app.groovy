@@ -83,7 +83,7 @@ pipeline {
     
     post {
         always {
-            cleanWs()
+            deleteDir()
         }
         success {
             echo "Environment for ${params.CUSTOMER_NAME} has been successfully destroyed."
