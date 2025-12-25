@@ -97,3 +97,37 @@ jobs:
           }
         }
       }
+
+      pipelineJob('dms-deploy-app') {
+        description('Deploy Domain Monitoring System via pipeline script')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/danielmazh/devops-managment.git')
+                  credentials('dit-new-new')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('projects/domain-monitoring-system/scripts/deploy-dms-app.groovy')
+            lightweight(true)
+          }
+        }
+        publishers {
+          extendedEmail {
+            recipientList('$DEFAULT_RECIPIENTS')
+            triggers {
+              failure {
+                subject('$DEFAULT_SUBJECT')
+                content('$DEFAULT_CONTENT')
+                sendTo {
+                  recipientList()
+                  culprits()
+                }
+              }
+            }
+          }
+        }
+      }
