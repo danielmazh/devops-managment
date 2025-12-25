@@ -45,6 +45,41 @@ credentials:
               username: "${DOCKER_HUB_USERNAME}"
               password: "${DOCKER_HUB_PASSWORD}"
 
+unclassified:
+  location:
+    adminAddress: "team3jenkins@no-replay.com"
+    url: "http://localhost:8080/"
+  mailer:
+    smtpHost: "smtp.gmail.com"
+    smtpPort: "587"
+    useSsl: true
+    authentication:
+      usernamePassword:
+        username: "${SMTP_USERNAME}"
+        password: "${SMTP_PASSWORD}"
+    replyToAddress: "team3jenkins@no-replay.com"
+  extendedEmailPublisher:
+    adminRequiredForTemplateTesting: false
+    allowUnregisteredEnabled: true
+    charset: "UTF-8"
+    debugMode: false
+    defaultBody: |
+      $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+
+      Check console output at $BUILD_URL to view the results.
+    defaultSubject: "$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!"
+    defaultSuffix: "@gmail.com"
+    maxAttachmentSize: -1
+    recipientList: "coperman12@gmail.com, daniel.mazhbits@gmail.com"
+    smtpServer: "smtp.gmail.com"
+    smtpPort: "587"
+    useSsl: true
+    watchingEnabled: true
+    auth:
+      usernamePassword:
+        username: "${SMTP_USERNAME}"
+        password: "${SMTP_PASSWORD}"
+
 jobs:
   - script: |
       pipelineJob('domain-monitoring-system') {

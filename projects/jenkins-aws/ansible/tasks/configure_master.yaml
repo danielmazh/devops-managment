@@ -113,7 +113,7 @@
 
 # Pull Jenkins Docker image
 - name: Pull Jenkins Image
-  ansible.builtin.shell: "docker pull danielmazh/jenkins:0.0.1"
+  ansible.builtin.shell: "docker pull danielmazh/jenkins:0.0.2"
   register: docker_pull_result
 
 # List Docker images

@@ -14,5 +14,7 @@ RUN jenkins-plugin-cli --plugins \
     job-dsl:latest \
     git:latest \
     workflow-aggregator:latest \
-    credentials-binding:latest
+    credentials-binding:latest \
+    email-ext:latest \
+    mailer:latest
 USER jenkins
