@@ -43,6 +43,7 @@ security:
       - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getText java.io.InputStream"
       - "method java.net.URL openConnection"
       - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object"
+      - "staticMethod groovy.json.JsonOutput toJson java.lang.Object"
 
 credentials:
   system:
