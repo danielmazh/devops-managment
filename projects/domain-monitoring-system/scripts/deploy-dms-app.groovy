@@ -62,7 +62,25 @@ def getTags(String repoName) {
 
 // Helper that runs an Ansible playbook on a list of IPs
 def runAnsibleOnIps(String ipsJson, String playbookPath, String extraVars = "") {
-    def ips = new groovy.json.JsonSlurper().parseText(ipsJson)
+    def ips = []
+    try {
+        if (ipsJson instanceof String) {
+            // Check if it's already a string representation of a list
+            if (ipsJson.startsWith("[") && ipsJson.endsWith("]")) {
+                ips = new groovy.json.JsonSlurper().parseText(ipsJson)
+            } else {
+                 // Assume single IP string if not json array
+                 ips = [ipsJson]
+            }
+        } else if (ipsJson instanceof List) {
+             ips = ipsJson
+        }
+    } catch (Exception e) {
+        echo "Error parsing IPs JSON: ${e.message}. Input was: ${ipsJson}"
+        // Fallback or re-throw
+        return 
+    }
+    
     ips.each { ip ->
         echo "Processing ${ip}..."
         // Wait for SSH port to be open
