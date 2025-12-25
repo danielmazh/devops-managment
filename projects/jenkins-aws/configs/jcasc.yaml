@@ -41,6 +41,8 @@ security:
       - "method java.net.URLConnection setDoOutput boolean"
       - "method java.net.URLConnection setRequestProperty java.lang.String java.lang.String"
       - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getText java.io.InputStream"
+      - "method java.net.URL openConnection"
+      - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object"
 
 credentials:
   system:

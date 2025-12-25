@@ -11,22 +11,37 @@
       changed_when: false
       no_log: true
 
-    - name: Pull Frontend Image
-      ansible.builtin.shell: "docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}"
-      register: docker_pull_result
+    - name: Create dms-fe systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/dms-fe.service
+        content: |
+          [Unit]
+          Description=DMS Frontend Service
+          After=docker.service
+          Requires=docker.service
 
-    - name: Check if dms-fe container exists
-      ansible.builtin.shell: "docker ps -aq -f name=dms-fe"
-      register: existing_container
-      changed_when: false
+          [Service]
+          TimeoutStartSec=0
+          Restart=always
+          ExecStartPre=-/usr/bin/docker stop dms-fe
+          ExecStartPre=-/usr/bin/docker rm dms-fe
+          ExecStartPre=/usr/bin/docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}
+          ExecStart=/usr/bin/docker run --rm --name dms-fe -p 8080:8080 {{ docker_user }}/dms-fe:{{ frontend_version }}
 
-    - name: Stop and remove existing dms-fe container
-      ansible.builtin.shell: "docker stop dms-fe && docker rm dms-fe"
-      when: existing_container.stdout != ""
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+      notify: Restart dms-fe
 
-    - name: Run Frontend Container
-      ansible.builtin.shell: "docker run -d -p 8080:8080 --name dms-fe {{ docker_user }}/dms-fe:{{ frontend_version }}"
-      register: docker_run_result
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: Ensure dms-fe service is enabled and started
+      ansible.builtin.systemd:
+        name: dms-fe
+        enabled: yes
+        state: started
 
     - name: Wait for the app to be ready
       ansible.builtin.uri:
@@ -38,3 +53,8 @@
       retries: 20
       delay: 5
 
+  handlers:
+    - name: Restart dms-fe
+      ansible.builtin.systemd:
+        name: dms-fe
+        state: restarted
