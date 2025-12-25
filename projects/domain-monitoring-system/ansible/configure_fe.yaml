@@ -11,6 +11,10 @@
       changed_when: false
       no_log: true
 
+    - name: Pull Frontend Image
+      ansible.builtin.shell: "docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}"
+      register: docker_pull_result
+
     - name: Create dms-fe systemd service
       ansible.builtin.copy:
         dest: /etc/systemd/system/dms-fe.service
@@ -42,6 +46,9 @@
         name: dms-fe
         enabled: yes
         state: started
+
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
 
     - name: Wait for the app to be ready
       ansible.builtin.uri:

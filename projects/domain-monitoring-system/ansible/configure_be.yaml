@@ -11,6 +11,10 @@
       changed_when: false
       no_log: true
 
+    - name: Pull Backend Image
+      ansible.builtin.shell: "docker pull {{ docker_user }}/dms-be:{{ backend_version }}"
+      register: docker_pull_result
+
     - name: Create dms-be systemd service
       ansible.builtin.copy:
         dest: /etc/systemd/system/dms-be.service
@@ -42,6 +46,9 @@
         name: dms-be
         enabled: yes
         state: started
+
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
 
     - name: Wait for the app to be ready
       ansible.builtin.uri:
