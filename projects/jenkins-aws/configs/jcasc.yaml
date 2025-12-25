@@ -73,6 +73,14 @@ credentials:
               description: "AWS credentials for Terraform"
               username: "${AWS_ACCESS_KEY_ID}"
               password: "${AWS_SECRET_ACCESS_KEY}"
+          - sshUserPrivateKey:
+              id: "daniel-devops"
+              scope: GLOBAL
+              description: "SSH Key for EC2 access"
+              username: "ubuntu"
+              privateKeySource:
+                directEntry:
+                  privateKey: "${DANIEL_DEVOPS_PRIVATE_KEY}"
 
 unclassified:
   location:
