@@ -58,12 +58,12 @@ credentials:
               description: "docker-hub-token"
               username: "${DOCKER_HUB_USERNAME}"
               password: "${DOCKER_HUB_PASSWORD}"
-          - aws:
+          - usernamePassword:
               id: "aws-creds"
               scope: GLOBAL
               description: "AWS credentials for Terraform"
-              accessKey: "${AWS_ACCESS_KEY_ID}"
-              secretKey: "${AWS_SECRET_ACCESS_KEY}"
+              username: "${AWS_ACCESS_KEY_ID}"
+              password: "${AWS_SECRET_ACCESS_KEY}"
 
 unclassified:
   location:

@@ -125,10 +125,9 @@ pipeline {
         stage('Trigger iac') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                                      credentialsId: 'aws-creds',
-                                      accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                                      secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                    withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                                                     usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                                     passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
 
                         def awsRegion = env.AWS_DEFAULT_REGION ?: 'us-east-2'
 
