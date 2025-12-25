@@ -44,7 +44,7 @@ pipeline {
                 '''
                 
                 // Clone the repository
-                withCredentials([usernamePassword(credentialsId: 'RonGitUser', usernameVariable: 'gUser', passwordVariable: 'gPass')]) {
+                withCredentials([usernamePassword(credentialsId: 'git-new-new', usernameVariable: 'gUser', passwordVariable: 'gPass')]) {
                     sh '''
                         git clone https://${gUser}:${gPass}@github.com/danielmazh/devops-managment.git
                     '''
