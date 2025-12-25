@@ -227,12 +227,22 @@ pipeline {
 
                     // 2. Parse the JSON string into a Groovy object
                     // def outputs = readJSON text: tfOutputString
+                    // Parse the JSON string from the file directly to avoid shell echo issues if possible, 
+                    // but we are reading the cat output. 
+                    // Let's ensure tfOutputString is clean.
                      def outputs = new JsonSlurper().parseText(tfOutputString)
 
                     // 3. Loop through outputs and set them as global environment variables
                     outputs.each { key, data ->
                         // Convert key to UPPERCASE and extract the inner 'value'
-                        env[key.toUpperCase()] = data.value
+                        // Ensure we are handling the value correctly. Terraform output json has "value" key.
+                        def val = data.value
+                        // If it's a list, convert to JSON string so we can parse it back later
+                        if (val instanceof List) {
+                            env[key.toUpperCase()] = groovy.json.JsonOutput.toJson(val)
+                        } else {
+                            env[key.toUpperCase()] = val.toString()
+                        }
                     }
                 }
             }
