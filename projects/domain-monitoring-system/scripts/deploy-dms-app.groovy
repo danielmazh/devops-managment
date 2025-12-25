@@ -94,6 +94,7 @@ pipeline {
         choice(name: 'BACKEND_COUNT', choices: ['1'], description: 'Number of backend instances')
         string(name: 'EMAIL_RECIPIENT', defaultValue: 'your-email@example.com', description: 'Email for notifications')
         booleanParam(name: 'SKIP_TERRAFORM', defaultValue: false, description: 'Skip Terraform Apply (Use existing infrastructure)')
+        booleanParam(name: 'AUTO_APPROVE', defaultValue: false, description: 'Skip manual approval and auto-apply Terraform')
     }
 
     stages {
@@ -146,8 +147,12 @@ pipeline {
                                   -var="frontend_instance_count=${params.FRONTEND_COUNT}"
                             """
 
-                            // 2. Pause for User Validation
-                            input message: 'Review the plan above. Approve Apply?', ok: 'Deploy'
+                            // 2. Pause for User Validation unless auto-approval is enabled
+                            if (!params.AUTO_APPROVE) {
+                                input message: 'Review the plan above. Approve Apply?', ok: 'Deploy'
+                            } else {
+                                echo 'AUTO_APPROVE=true: skipping manual approval gate.'
+                            }
 
                             // 3. Apply (Keep -auto-approve so the command doesn't hang)
                             sh """
