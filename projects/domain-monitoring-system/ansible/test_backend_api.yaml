@@ -1,158 +1,28 @@
 ---
 - name: Domain Monitoring System - API Test Suite
   hosts: all
-  gather_facts: false
-  vars:
-    base_url: "http://localhost:8080"
-    test_username: "testuser"
-    test_password: "TestPass123"
-    test_email: "test@example.com"
-    test_domain: "example.com"
-    cookie_jar_path: "/tmp/ansible_cookie_jar_{{ inventory_hostname }}"
-
+  gather_facts: yes
+  
   tasks:
-    - name: "Testing: User Registration"
-      uri:
-        url: "{{ base_url }}/register"
-        method: POST
-        body_format: json
-        body:
-          username: "{{ test_username }}"
-          password: "{{ test_password }}"
-          email: "{{ test_email }}"
-        status_code: [200, 302]
-        return_content: yes
-      register: registration_response
-      failed_when: registration_response.status not in [200, 302]
+    - name: Install python3-requests
+      package:
+        name: python3-requests
+        state: present
+      become: yes
+      ignore_errors: yes
 
-    - name: "Testing: User Login"
-      uri:
-        url: "{{ base_url }}/logincheck"
-        method: POST
-        body_format: json
-        body:
-          username: "{{ test_username }}"
-          password: "{{ test_password }}"
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: login_response
-      failed_when: >
-        login_response.status != 200 or
-        'message' not in login_response.json or
-        'successful' not in login_response.json.message | lower
+    - name: Execute API test script
+      ansible.builtin.script: ../scripts/test-app/test-api/test_api.py
+      args:
+        executable: python3
+      register: test_result
+      ignore_errors: yes
 
-    - name: "Testing: Add Single Domain"
-      uri:
-        url: "{{ base_url }}/api/add-domain"
-        method: POST
-        body_format: json
-        body:
-          domain: "{{ test_domain }}"
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: add_domain_response
-      failed_when: >
-        add_domain_response.status != 200 or
-        ('records_written' not in add_domain_response.json and 'error' in add_domain_response.json)
-
-    - name: "Testing: Get User Domains"
-      uri:
-        url: "{{ base_url }}/api/get-domains"
-        method: POST
-        body_format: json
-        body: {}
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: get_domains_response
-
-    - name: Display First Domain
+    - name: Print test output
       debug:
-        msg: "First domain: {{ get_domains_response.json[0].domain }}"
-      when: get_domains_response.json | length > 0
-
-    - name: "Testing: Get User Statistics"
-      uri:
-        url: "{{ base_url }}/api/get-stats"
-        method: GET
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: get_stats_response
-
-    - name: Display Stats
-      debug:
-        msg: 
-          - "Total domains: {{ get_stats_response.json.total_domains | default(0) }}"
-          - "Online: {{ get_stats_response.json.online_domains | default(0) }}"
-          - "Offline: {{ get_stats_response.json.offline_domains | default(0) }}"
-          - "Pending: {{ get_stats_response.json.pending_domains | default(0) }}"
-
-    - name: "Testing: Check Single Domain URL"
-      uri:
-        url: "{{ base_url }}/api/checkurl"
-        method: POST
-        body_format: json
-        body:
-          domain: "{{ test_domain }}"
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: check_url_response
-
-    - name: Display Check URL Result
-      debug:
-        msg: "Domain checked: {{ check_url_response.json.domain | default(test_domain) }}, Status: {{ check_url_response.json.status | default('N/A') }}"
-      when: check_url_response.json
-
-    - name: "Testing: Check All User Domains"
-      uri:
-        url: "{{ base_url }}/api/checkurls"
-        method: POST
-        body_format: json
-        body: {}
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: check_urls_response
-
-    - name: Display Check All URLs Result
-      debug:
-        msg: "Checked {{ check_urls_response.json | length }} domains"
-
-    - name: "Testing: Get System Logs"
-      uri:
-        url: "{{ base_url }}/api/get-logs"
-        method: GET
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: get_logs_response
-
-    - name: Display Latest Log
-      debug:
-        msg: "Latest log: {{ get_logs_response.json[-1][:100] }}..."
-      when: get_logs_response.json | length > 0
-
-    - name: "Testing: Delete Domain"
-      uri:
-        url: "{{ base_url }}/api/delete-domain"
-        method: DELETE
-        body_format: json
-        body:
-          domain: "{{ test_domain }}"
-        status_code: 200
-        return_content: yes
-        cookie_jar: "{{ cookie_jar_path }}"
-      register: delete_domain_response
-      failed_when: >
-        delete_domain_response.status != 200 or
-        'message' not in delete_domain_response.json
-
-    - name: Cleanup Cookie Jar
-      file:
-        path: "{{ cookie_jar_path }}"
-        state: absent
-
+        var: test_result.stdout_lines
+      
+    - name: Fail if tests failed
+      fail:
+        msg: "API tests failed"
+      when: test_result.rc != 0

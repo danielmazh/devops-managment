@@ -6,12 +6,12 @@
   tasks:
     - name: Copy domains file to remote
       ansible.builtin.copy:
-        src: ../scripts/test-selenium/domains.txt
+        src: ../scripts/test-app/test-selenium/domains.txt
         dest: /tmp/domains.txt
         mode: '0644'
 
     - name: Execute domain testing script
-      ansible.builtin.script: ../scripts/test-selenium/app.py
+      ansible.builtin.script: ../scripts/test-app/test-selenium/app.py
       args:
         executable: python3
       register: test_result
