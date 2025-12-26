@@ -11,6 +11,8 @@ RUN apt-get update && \
 
 RUN jenkins-plugin-cli --plugins \
     configuration-as-code:latest \
+    credentials:latest \
+    structs:latest \
     job-dsl:latest \
     git:latest \
     workflow-aggregator:latest \

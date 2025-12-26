@@ -113,7 +113,7 @@
 
 # Pull Jenkins Docker image
 - name: Pull Jenkins Image
-  ansible.builtin.shell: "docker pull danielmazh/jenkins:0.0.3"
+  ansible.builtin.shell: "docker pull danielmazh/jenkins:0.0.4"
   register: docker_pull_result
 
 # List Docker images
@@ -143,13 +143,13 @@
 - name: Copy ssh-credentials plugin into Jenkins home
   ansible.builtin.shell: >
     docker run --rm -v /var/jenkins_home:/var/jenkins_home
-    danielmazh/jenkins:0.0.3
+    danielmazh/jenkins:0.0.4
     bash -lc "mkdir -p /var/jenkins_home/plugins &&
     cp /usr/share/jenkins/ref/plugins/ssh-credentials.jpi /var/jenkins_home/plugins/"
 
 # Start Jenkins container
 - name: Run Jenkins Container
-  ansible.builtin.shell: "docker run -d --name jenkins-jcasc -p 8080:8080 -p 50000:50000 -v /var/jenkins_home:/var/jenkins_home -e CASC_JENKINS_CONFIG=/var/jenkins_home/jcasc.yaml -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\" --env-file /var/jenkins_home/jenkins.env danielmazh/jenkins:0.0.3"
+  ansible.builtin.shell: "docker run -d --name jenkins-jcasc -p 8080:8080 -p 50000:50000 -v /var/jenkins_home:/var/jenkins_home -e CASC_JENKINS_CONFIG=/var/jenkins_home/jcasc.yaml -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\" --env-file /var/jenkins_home/jenkins.env danielmazh/jenkins:0.0.4"
   register: docker_run_result
 
 # Wait for Jenkins initialization
