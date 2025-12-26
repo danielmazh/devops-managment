@@ -137,7 +137,7 @@
 
 # Ensure credential plugins are present in the persistent Jenkins home
 - name: Clean old credential plugins (if any)
-  ansible.builtin.shell: "rm -f /var/jenkins_home/plugins/ssh-credentials.* /var/jenkins_home/plugins/credentials.* /var/jenkins_home/plugins/structs.*"
+  ansible.builtin.shell: "rm -f /var/jenkins_home/plugins/ssh-credentials.* /var/jenkins_home/plugins/credentials.* /var/jenkins_home/plugins/structs.* /var/jenkins_home/plugins/plain-credentials.*"
   ignore_errors: true
 
 - name: Copy credential plugins into Jenkins home
@@ -147,7 +147,8 @@
     bash -lc "mkdir -p /var/jenkins_home/plugins &&
     cp /usr/share/jenkins/ref/plugins/ssh-credentials.jpi /var/jenkins_home/plugins/ &&
     cp /usr/share/jenkins/ref/plugins/credentials.jpi /var/jenkins_home/plugins/ &&
-    cp /usr/share/jenkins/ref/plugins/structs.jpi /var/jenkins_home/plugins/"
+    cp /usr/share/jenkins/ref/plugins/structs.jpi /var/jenkins_home/plugins/ &&
+    cp /usr/share/jenkins/ref/plugins/plain-credentials.jpi /var/jenkins_home/plugins/"
 
 # Start Jenkins container
 - name: Run Jenkins Container
