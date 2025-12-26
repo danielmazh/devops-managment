@@ -15,6 +15,7 @@ RUN jenkins-plugin-cli --plugins \
     git:latest \
     workflow-aggregator:latest \
     credentials-binding:latest \
+    ssh-credentials:latest \
     email-ext:latest \
     mailer:latest
 USER jenkins
