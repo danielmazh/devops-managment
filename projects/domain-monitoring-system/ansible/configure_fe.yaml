@@ -27,6 +27,19 @@
       ansible.builtin.shell: "docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}"
       register: docker_pull_result
 
+    - name: Extract and customize nginx config with backend IP
+      ansible.builtin.shell: |
+        # Pull image if not present
+        docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}
+        # Create temp container to extract nginx.conf
+        docker create --name temp-fe {{ docker_user }}/dms-fe:{{ frontend_version }}
+        docker cp temp-fe:/etc/nginx/nginx.conf /tmp/nginx.conf
+        docker rm temp-fe
+        # Replace BACKEND_IP placeholder with actual backend IP
+        sed -i 's/BACKEND_IP/{{ backend_ip }}/g' /tmp/nginx.conf
+      args:
+        creates: /tmp/nginx.conf
+
     - name: Create dms-fe systemd service
       ansible.builtin.copy:
         dest: /etc/systemd/system/dms-fe.service
@@ -42,7 +55,7 @@
           ExecStartPre=-/usr/bin/docker stop dms-fe
           ExecStartPre=-/usr/bin/docker rm dms-fe
           ExecStartPre=/usr/bin/docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}
-          ExecStart=/usr/bin/docker run --rm --name dms-fe -p 80:80 {{ docker_user }}/dms-fe:{{ frontend_version }}
+          ExecStart=/usr/bin/docker run --rm --name dms-fe -p 80:80 -v /tmp/nginx.conf:/etc/nginx/nginx.conf:ro {{ docker_user }}/dms-fe:{{ frontend_version }}
 
           [Install]
           WantedBy=multi-user.target

@@ -276,7 +276,12 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-ron-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        def extraVars = "-e 'docker_user=${DOCKER_USER} docker_password=${DOCKER_PASSWORD} frontend_version=${params.FRONTEND_VERSION}'"
+                        // Parse backend IPs JSON to get first backend IP for frontend proxy
+                        def backendIpsJson = env.BACKEND_INSTANCE_PUBLIC_IPS
+                        def backendIps = new groovy.json.JsonSlurper().parseText(backendIpsJson)
+                        def backendIp = backendIps[0]  // Use first backend IP
+                        
+                        def extraVars = "-e 'docker_user=${DOCKER_USER} docker_password=${DOCKER_PASSWORD} frontend_version=${params.FRONTEND_VERSION} backend_ip=${backendIp}'"
                         runAnsibleOnIps(env.FRONTEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/configure_fe.yaml', extraVars)
                     }
                 }
