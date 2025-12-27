@@ -42,7 +42,7 @@ def test_register(session):
     """Test user registration"""
     print_test("User Registration")
     
-    url = f"{BASE_URL}/register"
+    url = f"{BASE_URL}/api/register"
     data = {
         "username": TEST_USERNAME,
         "password": TEST_PASSWORD,
@@ -53,9 +53,9 @@ def test_register(session):
     try:
         # Send POST request to register endpoint with user credentials
         response = session.post(url, json=data, headers=headers)
-        # Check if registration was successful (200 OK or 302 redirect)
-        if response.status_code in [200, 302]:
-            print_success("Registration successful")
+        # Check if registration was successful (201 Created or 409 Conflict if already exists)
+        if response.status_code in [201, 409]:
+            print_success("Registration successful" if response.status_code == 201 else "User already registered")
             return True
         else:
             print_error(f"Registration failed: {response.status_code} - {response.text}")
@@ -68,7 +68,7 @@ def test_login(session):
     """Test user login"""
     print_test("User Login")
     
-    url = f"{BASE_URL}/logincheck"
+    url = f"{BASE_URL}/api/login"
     data = {
         "username": TEST_USERNAME,
         "password": TEST_PASSWORD
@@ -123,8 +123,8 @@ def test_get_domains(session):
     headers = {"Content-Type": "application/json"}
     
     try:
-        # Send POST request to retrieve all user domains
-        response = session.post(url, json={}, headers=headers)
+        # Send GET request to retrieve all user domains
+        response = session.get(url, headers=headers)
         # Parse and verify domains list was retrieved
         if response.status_code == 200:
             domains = response.json()
@@ -197,8 +197,8 @@ def test_check_urls(session):
     headers = {"Content-Type": "application/json"}
     
     try:
-        # Send POST request to check all user domains
-        response = session.post(url, json={}, headers=headers)
+        # Send GET request to check all user domains
+        response = session.get(url, headers=headers)
         # Verify bulk domain check completed successfully
         if response.status_code == 200:
             results = response.json()
