@@ -60,7 +60,7 @@ def getTags(String repoName) {
     }
 }
 
-// Helper that runs an Ansible playbook on a list of IPs
+// Helper that runs an Ansible playbook on a list of IPs using Docker
 def runAnsibleOnIps(String ipsJson, String playbookPath, String extraVars = "") {
     def ips = []
     try {
@@ -94,9 +94,13 @@ def runAnsibleOnIps(String ipsJson, String playbookPath, String extraVars = "") 
         echo "Running Ansible on ${ip}..."
         withCredentials([sshUserPrivateKey(credentialsId: 'daniel-devops', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
             sh """
-                export ANSIBLE_HOST_KEY_CHECKING=False
                 chmod 600 \$SSH_KEY
-                ansible-playbook -i '${ip},' -u ubuntu --private-key \$SSH_KEY ${playbookPath} ${extraVars}
+                docker run --rm \
+                  -v \$SSH_KEY:/ssh-key:ro \
+                  -v \${WORKSPACE}:/workspace:ro \
+                  -e ANSIBLE_HOST_KEY_CHECKING=False \
+                  cytopia/ansible:latest \
+                  ansible-playbook -i '${ip},' -u ubuntu --private-key /ssh-key /workspace/${playbookPath} ${extraVars}
             """
         }
     }
