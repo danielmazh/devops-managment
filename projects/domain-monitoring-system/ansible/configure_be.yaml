@@ -66,11 +66,11 @@
 
     - name: Wait for the app to be ready
       ansible.builtin.uri:
-        url: "http://localhost:8080"
-        status_code: [200, 302]
+        url: "http://localhost:8080/health"
+        status_code: [200]
         return_content: no
       register: app_ready
-      until: app_ready.status == 200 or app_ready.status == 302
+      until: app_ready.status == 200
       retries: 20
       delay: 5
 
