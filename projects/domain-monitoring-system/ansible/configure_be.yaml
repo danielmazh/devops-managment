@@ -3,6 +3,8 @@
   hosts: all
   become: true
   gather_facts: false
+  vars:
+    docker_platform: "linux/amd64"
 
   tasks:
     - name: Install Docker engine
@@ -24,7 +26,7 @@
       no_log: true
 
     - name: Pull Backend Image
-      ansible.builtin.shell: "docker pull {{ docker_user }}/dms-be:{{ backend_version }}"
+      ansible.builtin.shell: "docker pull --platform {{ docker_platform }} {{ docker_user }}/dms-be:{{ backend_version }}"
       register: docker_pull_result
 
     - name: Create dms-be systemd service
@@ -41,8 +43,8 @@
           Restart=always
           ExecStartPre=-/usr/bin/docker stop dms-be
           ExecStartPre=-/usr/bin/docker rm dms-be
-          ExecStartPre=/usr/bin/docker pull {{ docker_user }}/dms-be:{{ backend_version }}
-          ExecStart=/usr/bin/docker run --rm --name dms-be -p 8080:8080 {{ docker_user }}/dms-be:{{ backend_version }}
+          ExecStartPre=/usr/bin/docker pull --platform {{ docker_platform }} {{ docker_user }}/dms-be:{{ backend_version }}
+          ExecStart=/usr/bin/docker run --rm --platform {{ docker_platform }} --name dms-be -p 8080:8080 {{ docker_user }}/dms-be:{{ backend_version }}
 
           [Install]
           WantedBy=multi-user.target
