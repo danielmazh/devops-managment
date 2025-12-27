@@ -5,6 +5,18 @@
   gather_facts: false
 
   tasks:
+    - name: Install Docker engine
+      ansible.builtin.apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
     - name: Log in to Docker Hub
       ansible.builtin.shell: "docker login -u {{ docker_user }} -p {{ docker_password }}"
       register: docker_login_result
