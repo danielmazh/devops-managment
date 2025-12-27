@@ -100,7 +100,7 @@ def runAnsibleOnIps(String ipsJson, String playbookPath, String extraVars = "") 
                   -v \${WORKSPACE}:/workspace:ro \
                   -e ANSIBLE_HOST_KEY_CHECKING=False \
                   cytopia/ansible:latest \
-                  ansible-playbook -i '${ip},' -u ubuntu --private-key /ssh-key /workspace/${playbookPath} ${extraVars}
+                  sh -c "command -v ssh >/dev/null 2>&1 || (apk add --no-cache openssh || (apt-get update && apt-get install -y openssh-client)); ansible-playbook -i '${ip},' -u ubuntu --private-key /ssh-key /workspace/${playbookPath} ${extraVars}"
             """
         }
     }
