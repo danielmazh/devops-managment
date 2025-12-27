@@ -27,7 +27,7 @@
       ansible.builtin.shell: "docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}"
       register: docker_pull_result
 
-    - name: Extract and customize nginx config with backend IP
+    - name: Extract and customize nginx config with backend IPs
       ansible.builtin.shell: |
         # Pull image if not present
         docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}
@@ -35,10 +35,15 @@
         docker create --name temp-fe {{ docker_user }}/dms-fe:{{ frontend_version }}
         docker cp temp-fe:/etc/nginx/nginx.conf /tmp/nginx.conf
         docker rm temp-fe
-        # Replace BACKEND_IP placeholder with actual backend IP
-        sed -i 's/BACKEND_IP/{{ backend_ip }}/g' /tmp/nginx.conf
+        # Build upstream server list for all backends
+        BACKEND_SERVERS=""
+        {% for ip in backend_ips.split(',') %}
+        BACKEND_SERVERS="${BACKEND_SERVERS}    server {{ ip }}:8080;\n"
+        {% endfor %}
+        # Replace placeholder with actual backend servers
+        sed -i "s|# BACKEND_SERVERS|${BACKEND_SERVERS}|g" /tmp/nginx.conf
       args:
-        creates: /tmp/nginx.conf
+        executable: /bin/bash
 
     - name: Create dms-fe systemd service
       ansible.builtin.copy:
