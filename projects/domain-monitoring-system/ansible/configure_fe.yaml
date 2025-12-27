@@ -5,6 +5,18 @@
   gather_facts: false
 
   tasks:
+    - name: Install Docker engine
+      ansible.builtin.apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
     - name: Log in to Docker Hub
       ansible.builtin.shell: "docker login -u {{ docker_user }} -p {{ docker_password }}"
       register: docker_login_result
@@ -30,7 +42,7 @@
           ExecStartPre=-/usr/bin/docker stop dms-fe
           ExecStartPre=-/usr/bin/docker rm dms-fe
           ExecStartPre=/usr/bin/docker pull {{ docker_user }}/dms-fe:{{ frontend_version }}
-          ExecStart=/usr/bin/docker run --rm --name dms-fe -p 8080:8080 {{ docker_user }}/dms-fe:{{ frontend_version }}
+          ExecStart=/usr/bin/docker run --rm --name dms-fe -p 80:80 {{ docker_user }}/dms-fe:{{ frontend_version }}
 
           [Install]
           WantedBy=multi-user.target
@@ -52,7 +64,7 @@
 
     - name: Wait for the app to be ready
       ansible.builtin.uri:
-        url: "http://localhost:8080"
+        url: "http://localhost:80"
         status_code: [200, 302]
         return_content: no
       register: app_ready
