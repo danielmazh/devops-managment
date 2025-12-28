@@ -1,21 +1,44 @@
 ---
 - name: Run Selenium functional tests
   hosts: all
-  gather_facts: no  # Optional: disable fact gathering to save time if not needed
+  gather_facts: yes
+  become: yes
   
   tasks:
+    - name: Install Python pip
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Install Selenium and requests
+      ansible.builtin.pip:
+        name:
+          - selenium
+          - requests
+        state: present
+
+    - name: Install Chromium browser and chromedriver
+      ansible.builtin.apt:
+        name:
+          - chromium-browser
+          - chromium-chromedriver
+        state: present
+
     - name: Copy domains file to remote
       ansible.builtin.copy:
         src: ../scripts/test-app/test-selenium/domains.txt
         dest: /tmp/domains.txt
         mode: '0644'
+      become: no
 
     - name: Execute domain testing script
       ansible.builtin.script: ../scripts/test-app/test-selenium/app.py
       args:
         executable: python3
       register: test_result
-      ignore_errors: yes  # Continue to print output even if test fails
+      ignore_errors: yes
+      become: no
 
     - name: Print test output
       ansible.builtin.debug:

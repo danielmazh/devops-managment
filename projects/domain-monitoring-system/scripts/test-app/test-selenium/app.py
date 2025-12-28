@@ -22,7 +22,7 @@ options.add_argument("--window-size=1920,1080")
 driver = webdriver.Chrome(options=options)
 
 # ----- Open local app -----
-driver.get("http://localhost:8080")
+driver.get("http://localhost:80")
 
 # ----- Wait until login fields appear -----
 wait = WebDriverWait(driver, 10)
