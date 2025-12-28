@@ -118,6 +118,10 @@ pipeline {
         string(name: 'EMAIL_RECIPIENT', defaultValue: 'your-email@example.com', description: 'Email for notifications')
         booleanParam(name: 'SKIP_TERRAFORM', defaultValue: false, description: 'Skip Terraform Apply (Use existing infrastructure)')
         booleanParam(name: 'AUTO_APPROVE', defaultValue: false, description: 'Skip manual approval and auto-apply Terraform')
+        booleanParam(name: 'SKIP_BACKEND_CONFIG', defaultValue: false, description: 'Skip Backend Configuration')
+        booleanParam(name: 'SKIP_BACKEND_TESTING', defaultValue: false, description: 'Skip Backend Testing')
+        booleanParam(name: 'SKIP_FRONTEND_CONFIG', defaultValue: false, description: 'Skip Frontend Configuration')
+        booleanParam(name: 'SKIP_FRONTEND_TESTING', defaultValue: false, description: 'Skip Frontend Testing')
     }
 
     stages {
@@ -129,6 +133,10 @@ pipeline {
                 echo "Frontend Instances: ${params.FRONTEND_COUNT}"
                 echo "Backend Instances: ${params.BACKEND_COUNT}"
                 echo "Skip Terraform: ${params.SKIP_TERRAFORM}"
+                echo "Skip Backend Config: ${params.SKIP_BACKEND_CONFIG}"
+                echo "Skip Backend Testing: ${params.SKIP_BACKEND_TESTING}"
+                echo "Skip Frontend Config: ${params.SKIP_FRONTEND_CONFIG}"
+                echo "Skip Frontend Testing: ${params.SKIP_FRONTEND_TESTING}"
             }
         }
 
@@ -254,8 +262,12 @@ pipeline {
         }
 
         stage('Configure Backend') {
+            when {
+                expression { return !params.SKIP_BACKEND_CONFIG }
+            }
             steps {
                 script {
+                    echo "Backend Instance IPs: ${env.BACKEND_INSTANCE_PUBLIC_IPS}"
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-ron-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
                         def extraVars = "-e 'docker_user=${DOCKER_USER} docker_password=${DOCKER_PASSWORD} backend_version=${params.BACKEND_VERSION}'"
                         runAnsibleOnIps(env.BACKEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/configure_be.yaml', extraVars)
@@ -265,16 +277,25 @@ pipeline {
         }
 
         stage('Backend Testing') {
+            when {
+                expression { return !params.SKIP_BACKEND_TESTING }
+            }
             steps {
                 script {
+                    echo "Backend Instance IPs: ${env.BACKEND_INSTANCE_PUBLIC_IPS}"
                     runAnsibleOnIps(env.BACKEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/test_backend_api.yaml')
                 }
             }
         }
 
         stage('Configure Frontend') {
+            when {
+                expression { return !params.SKIP_FRONTEND_CONFIG }
+            }
             steps {
                 script {
+                    echo "Frontend Instance IPs: ${env.FRONTEND_INSTANCE_PUBLIC_IPS}"
+                    echo "Backend Instance IPs: ${env.BACKEND_INSTANCE_PUBLIC_IPS}"
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-ron-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
                         // Parse backend IPs JSON and join as comma-separated string for nginx upstream
                         def backendIpsJson = env.BACKEND_INSTANCE_PUBLIC_IPS
@@ -289,8 +310,12 @@ pipeline {
         }
 
         stage('Frontend Testing') {
+            when {
+                expression { return !params.SKIP_FRONTEND_TESTING }
+            }
             steps {
                 script {
+                    echo "Frontend Instance IPs: ${env.FRONTEND_INSTANCE_PUBLIC_IPS}"
                     runAnsibleOnIps(env.FRONTEND_INSTANCE_PUBLIC_IPS, 'devops-managment/projects/domain-monitoring-system/ansible/test_frontend_selenium.yaml')
                 }
             }
