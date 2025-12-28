@@ -150,9 +150,32 @@
     cp /usr/share/jenkins/ref/plugins/structs.jpi /var/jenkins_home/plugins/ &&
     cp /usr/share/jenkins/ref/plugins/plain-credentials.jpi /var/jenkins_home/plugins/"
 
-# Start Jenkins container
+# Read SSH private key from jenkins.env and convert \n to actual newlines
+- name: Read DANIEL_DEVOPS_PRIVATE_KEY from jenkins.env with proper newline handling
+  ansible.builtin.shell: |
+    key_value=$(grep '^DANIEL_DEVOPS_PRIVATE_KEY=' {{ playbook_dir }}/../configs/jenkins.env | cut -d'=' -f2-)
+    echo -e "$key_value"
+  register: ssh_private_key_result
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+
+- name: Set SSH private key as a fact
+  ansible.builtin.set_fact:
+    daniel_devops_private_key: "{{ ssh_private_key_result.stdout }}"
+
+# Start Jenkins container with SSH key passed as environment variable
 - name: Run Jenkins Container
-  ansible.builtin.shell: "docker run -d --name jenkins-jcasc -p 8080:8080 -p 50000:50000 -v /var/jenkins_home:/var/jenkins_home -e CASC_JENKINS_CONFIG=/var/jenkins_home/jcasc.yaml -e JAVA_OPTS=\"-Djenkins.install.runSetupWizard=false\" --env-file /var/jenkins_home/jenkins.env danielmazh/jenkins:0.0.4"
+  ansible.builtin.shell: >
+    docker run -d --name jenkins-jcasc 
+    -p 8080:8080 -p 50000:50000 
+    -v /var/jenkins_home:/var/jenkins_home 
+    -e CASC_JENKINS_CONFIG=/var/jenkins_home/jcasc.yaml 
+    -e JAVA_OPTS="-Djenkins.install.runSetupWizard=false" 
+    -e DANIEL_DEVOPS_PRIVATE_KEY="{{ daniel_devops_private_key }}"
+    --env-file /var/jenkins_home/jenkins.env 
+    danielmazh/jenkins:0.0.4
   register: docker_run_result
 
 # Wait for Jenkins initialization
