@@ -17,6 +17,7 @@
           - selenium
           - requests
         state: present
+        break_system_packages: yes
 
     - name: Install Chromium browser and chromedriver
       ansible.builtin.apt:
