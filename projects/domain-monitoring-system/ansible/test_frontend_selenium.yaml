@@ -18,6 +18,7 @@
           - requests
         state: present
         break_system_packages: yes
+        extra_args: "--ignore-installed"
 
     - name: Install Chromium browser and chromedriver
       ansible.builtin.apt:
