@@ -34,6 +34,11 @@ username_input.send_keys("D7675808@gmail.com")
 password_input.send_keys("D7675808@gmail.com")
 password_input.send_keys(Keys.RETURN)
 
+# ----- Wait for redirect to dashboard after login -----
+# Wait until URL changes from login page (contains 'dashboard' or doesn't contain 'login')
+wait.until(lambda driver: "dashboard" in driver.current_url or driver.current_url.endswith("/"))
+time.sleep(1)  # Extra wait for page to fully load
+
 # ----- Print some info in text -----
 print("Login successful")
 print("Current page title:", driver.title)
