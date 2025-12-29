@@ -4,7 +4,8 @@
 properties([
     parameters([
         string(name: 'CUSTOMER_NAME', description: 'Enter the Customer Environment to destroy (Based on existing Security Groups). Name should not include "-sg" suffix.', trim: true),
-        booleanParam(name: 'CONFIRM_DELETION', defaultValue: false, description: 'SAFETY CHECK: Check this box to confirm you want to DESTROY the selected environment.')
+        booleanParam(name: 'CONFIRM_DELETION', defaultValue: false, description: 'SAFETY CHECK: Check this box to confirm you want to DESTROY the selected environment.'),
+        booleanParam(name: 'FORCE_UNLOCK', defaultValue: false, description: 'Force unlock Terraform state if locked (use only if state is stuck from a previous operation).')
     ])
 ])
 
@@ -59,6 +60,7 @@ pipeline {
                                                  passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     script {
                         def awsRegion = env.AWS_DEFAULT_REGION ?: 'us-east-2'
+                        def forceUnlock = params.FORCE_UNLOCK ?: false
                         def maxRetries = 3
                         def retryCount = 0
                         def success = false
@@ -77,13 +79,23 @@ pipeline {
                                     
                                     echo "Attempting to acquire state lock (attempt \$((${retryCount} + 1))/${maxRetries})..."
                                     
-                                    # Try to get the lock ID if state is locked
-                                    LOCK_ID=\$(terraform plan -var="customer_name=${params.CUSTOMER_NAME}" 2>&1 | grep -oP 'ID:\\s+\\K[a-f0-9-]+' | head -1 || echo "")
-                                    
-                                    if [ -n "\$LOCK_ID" ]; then
-                                        echo "State is locked with ID: \$LOCK_ID"
-                                        echo "Attempting to force unlock..."
-                                        terraform force-unlock -force "\$LOCK_ID"
+                                    # Only attempt force unlock if the checkbox is checked
+                                    if [ "${forceUnlock}" = "true" ]; then
+                                        echo "Force unlock is enabled. Checking for locked state..."
+                                        # Try to get the lock ID if state is locked
+                                        LOCK_ID=\$(terraform plan -var="customer_name=${params.CUSTOMER_NAME}" 2>&1 | grep -oP 'ID:\\s+\\K[a-f0-9-]+' | head -1 || echo "")
+                                        
+                                        if [ -n "\$LOCK_ID" ]; then
+                                            echo "State is locked with ID: \$LOCK_ID"
+                                            echo "Attempting to force unlock..."
+                                            terraform force-unlock -force "\$LOCK_ID"
+                                            echo "State unlocked successfully."
+                                        else
+                                            echo "No lock detected. Proceeding with destroy..."
+                                        fi
+                                    else
+                                        echo "Force unlock is disabled. If state is locked, the destroy will fail."
+                                        echo "Enable 'FORCE_UNLOCK' parameter to automatically unlock stuck states."
                                     fi
                                     
                                     echo "Running Terraform Destroy for customer: ${params.CUSTOMER_NAME}"
@@ -96,9 +108,16 @@ pipeline {
                                 retryCount++
                                 if (retryCount < maxRetries) {
                                     echo "Destroy attempt failed. Retrying in 10 seconds... (${retryCount}/${maxRetries})"
+                                    if (!forceUnlock) {
+                                        echo "TIP: If the failure is due to a locked state, re-run with 'FORCE_UNLOCK' checked."
+                                    }
                                     sleep 10
                                 } else {
-                                    echo "All retry attempts exhausted. Manual intervention may be required."
+                                    echo "All retry attempts exhausted."
+                                    if (!forceUnlock) {
+                                        echo "If the state is locked, try re-running with 'FORCE_UNLOCK' checkbox enabled."
+                                    }
+                                    echo "Alternatively, use the unlock-terraform-state.sh script for manual unlock."
                                     throw e
                                 }
                             }
