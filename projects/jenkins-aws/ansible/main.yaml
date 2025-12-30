@@ -66,53 +66,53 @@
 
 # PLAY 3: Create GitHub Webhook to Jenkins
 # Requires: define github_token (PAT with repo:admin or appropriate scopes)
-- name: Create GitHub webhook
-  hosts: localhost
-  gather_facts: false
-  vars:
-    repo_full_name: "danielmazh/domain-monitoring-system"
-  tasks:
-    - name: Pick master host (first in group, unless overridden)
-      ansible.builtin.set_fact:
-        selected_master: "{{ target_master | default(groups['jenkins_master'][0]) }}"
-
-    - name: Resolve master public IP for webhook
-      ansible.builtin.set_fact:
-        master_public_ip: "{{ hostvars[selected_master].jenkins_master_ip_var }}"
-
-    - name: Read GitHub PAT from jenkins.env
-      ansible.builtin.shell: "grep '^GIT_NEW_NEW_PASSWORD=' {{ playbook_dir }}/../configs/jenkins.env | cut -d'=' -f2"
-      register: github_pat_result
-      delegate_to: localhost
-      become: false
-      run_once: true
-      changed_when: false
-      no_log: true
-
-    - name: Set GitHub token fact
-      ansible.builtin.set_fact:
-        github_token: "{{ github_pat_result.stdout.strip() }}"
-      run_once: true
-      no_log: true
-
-    - name: Create GitHub webhook (push -> Jenkins)
-      ansible.builtin.uri:
-        url: "https://api.github.com/repos/{{ repo_full_name }}/hooks"
-        method: POST
-        status_code: [201, 200]
-        validate_certs: false
-        headers:
-          Authorization: "token {{ github_token }}"
-          Accept: "application/vnd.github+json"
-        body_format: json
-        body:
-          name: "web"
-          active: true
-          events:
-            - push
-          config:
-            url: "http://{{ master_public_ip }}:8080/github-webhook/"
-            content_type: "json"
-            insecure_ssl: "0"
-      delegate_to: localhost
-      run_once: true
+# - name: Create GitHub webhook
+#   hosts: localhost
+#   gather_facts: false
+#   vars:
+#     repo_full_name: "danielmazh/domain-monitoring-system"
+#   tasks:
+#     - name: Pick master host (first in group, unless overridden)
+#       ansible.builtin.set_fact:
+#         selected_master: "{{ target_master | default(groups['jenkins_master'][0]) }}"
+# 
+#     - name: Resolve master public IP for webhook
+#       ansible.builtin.set_fact:
+#         master_public_ip: "{{ hostvars[selected_master].jenkins_master_ip_var }}"
+# 
+#     - name: Read GitHub PAT from jenkins.env
+#       ansible.builtin.shell: "grep '^GIT_NEW_NEW_PASSWORD=' {{ playbook_dir }}/../configs/jenkins.env | cut -d'=' -f2"
+#       register: github_pat_result
+#       delegate_to: localhost
+#       become: false
+#       run_once: true
+#       changed_when: false
+#       no_log: true
+# 
+#     - name: Set GitHub token fact
+#       ansible.builtin.set_fact:
+#         github_token: "{{ github_pat_result.stdout.strip() }}"
+#       run_once: true
+#       no_log: true
+# 
+#     - name: Create GitHub webhook (push -> Jenkins)
+#       ansible.builtin.uri:
+#         url: "https://api.github.com/repos/{{ repo_full_name }}/hooks"
+#         method: POST
+#         status_code: [201, 200]
+#         validate_certs: false
+#         headers:
+#           Authorization: "token {{ github_token }}"
+#           Accept: "application/vnd.github+json"
+#         body_format: json
+#         body:
+#           name: "web"
+#           active: true
+#           events:
+#             - push
+#           config:
+#             url: "http://{{ master_public_ip }}:8080/github-webhook/"
+#             content_type: "json"
+#             insecure_ssl: "0"
+#       delegate_to: localhost
+#       run_once: true
