@@ -68,7 +68,8 @@ driver = webdriver.Chrome(service=service, options=options)
 
 # Enable LocalFileDetector to allow file uploads from the local filesystem
 # This is required when ChromeDriver's sandbox prevents direct file access
-driver.set_file_detector(LocalFileDetector())
+# Use property assignment for local WebDriver (set_file_detector is only for RemoteWebDriver)
+driver.file_detector = LocalFileDetector()
 
 try:
     # ----- Open local app -----
