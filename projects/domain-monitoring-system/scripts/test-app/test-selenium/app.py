@@ -262,21 +262,46 @@ try:
     # so we might need to look for the file in a known location (e.g. /tmp)
     # or expect it to be alongside if copied manually.
     possible_paths = [
-        Path(__file__).resolve().parent / "domains.txt",
-        Path("/tmp/domains.txt")
+        Path("/tmp/domains.txt"),  # Check /tmp first (where Ansible copies it)
+        Path(__file__).resolve().parent / "domains.txt",  # Then check script directory
     ]
 
     file_path = None
     for p in possible_paths:
-        if p.exists():
-            file_path = str(p)
+        if p.exists() and p.is_file():
+            file_path = str(p.absolute())
+            print(f"Found domains.txt at: {file_path}")
+            # Verify file is readable
+            if not os.access(file_path, os.R_OK):
+                print(f"WARNING: File {file_path} exists but is not readable!")
+                continue
             break
 
     if not file_path:
-        print("ERROR: domains.txt not found!")
-        # Fallback to local relative path even if not found, let selenium error out naturally or just use the first one
-        file_path = str(possible_paths[0])
+        print("ERROR: domains.txt not found in any of the following locations:")
+        for p in possible_paths:
+            exists = p.exists()
+            readable = os.access(str(p), os.R_OK) if exists else False
+            print(f"  - {p}")
+            print(f"    exists: {exists}, readable: {readable}")
+            if exists:
+                stat_info = p.stat()
+                print(f"    size: {stat_info.st_size}, mode: {oct(stat_info.st_mode)}")
+        raise FileNotFoundError("domains.txt file not found or not accessible")
 
+    # Double-check file exists and is readable before sending to Selenium
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File {file_path} does not exist")
+    if not os.access(file_path, os.R_OK):
+        raise PermissionError(f"File {file_path} is not readable")
+    
+    # Verify file is not empty
+    if os.path.getsize(file_path) == 0:
+        raise ValueError(f"File {file_path} is empty")
+    
+    print(f"Using file: {file_path}")
+    print(f"File size: {os.path.getsize(file_path)} bytes")
+    print(f"File readable: {os.access(file_path, os.R_OK)}")
     file_input.send_keys(file_path)
     print(f"Uploaded file: {file_path}")
 

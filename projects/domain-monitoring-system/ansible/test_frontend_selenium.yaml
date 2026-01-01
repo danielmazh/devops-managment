@@ -32,7 +32,18 @@
         src: ../scripts/test-app/test-selenium/domains.txt
         dest: /tmp/domains.txt
         mode: '0644'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       become: no
+
+    - name: Verify domains file exists
+      ansible.builtin.stat:
+        path: /tmp/domains.txt
+      register: domains_file_stat
+
+    - name: Display file info
+      ansible.builtin.debug:
+        msg: "File exists: {{ domains_file_stat.stat.exists }}, Path: {{ domains_file_stat.stat.path }}, Mode: {{ domains_file_stat.stat.mode }}"
 
     - name: Execute domain testing script
       ansible.builtin.script: ../scripts/test-app/test-selenium/app.py
