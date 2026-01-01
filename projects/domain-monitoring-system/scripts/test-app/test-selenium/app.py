@@ -268,7 +268,8 @@ try:
     # Check home directory first (more accessible due to Chromium sandbox restrictions)
     home_dir = os.path.expanduser("~")
     possible_paths = [
-        Path(f"{home_dir}/domains.txt"),  # Check home directory first (Ansible copies here)
+        Path(f"{home_dir}/domains.txt"),  # Check current user's home first
+        Path("/home/ubuntu/domains.txt"),  # Check ubuntu user home (Ansible copies here)
         Path("/tmp/domains.txt"),  # Fallback to /tmp
         Path(__file__).resolve().parent / "domains.txt",  # Finally check script directory
     ]
