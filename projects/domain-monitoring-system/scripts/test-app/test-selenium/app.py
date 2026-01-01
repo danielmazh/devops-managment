@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.remote.file_detector import LocalFileDetector
 import time
 import os
 from pathlib import Path
@@ -64,6 +65,10 @@ else:
     print("Using default chromedriver location")
 
 driver = webdriver.Chrome(service=service, options=options)
+
+# Enable LocalFileDetector to allow file uploads from the local filesystem
+# This is required when ChromeDriver's sandbox prevents direct file access
+driver.set_file_detector(LocalFileDetector())
 
 try:
     # ----- Open local app -----
