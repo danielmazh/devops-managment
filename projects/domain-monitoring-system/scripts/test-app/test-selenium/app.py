@@ -265,11 +265,12 @@ try:
 
     # Determine path to domains.txt
     # When running via Ansible script module, the script is in a temp dir,
-    # so we might need to look for the file in a known location (e.g. /tmp)
-    # or expect it to be alongside if copied manually.
+    # Check home directory first (more accessible due to Chromium sandbox restrictions)
+    home_dir = os.path.expanduser("~")
     possible_paths = [
-        Path("/tmp/domains.txt"),  # Check /tmp first (where Ansible copies it)
-        Path(__file__).resolve().parent / "domains.txt",  # Then check script directory
+        Path(f"{home_dir}/domains.txt"),  # Check home directory first (Ansible copies here)
+        Path("/tmp/domains.txt"),  # Fallback to /tmp
+        Path(__file__).resolve().parent / "domains.txt",  # Finally check script directory
     ]
 
     file_path = None
