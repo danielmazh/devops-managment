@@ -8,7 +8,7 @@ jenkins:
           password: "${JENKINS_ADMIN_PASSWORD}"
   authorizationStrategy:
     loggedInUsersCanDoAnything:
-      allowAnonymousRead: true
+      allowAnonymousRead: false
 
   nodes:
     - permanent:
@@ -17,7 +17,7 @@ jenkins:
         remoteFS: "/var/jenkins_home"
         numExecutors: 2
         labelString: "jenkins-slave-team-3-new"
-        mode: NORMAL
+        mode: "NORMAL"
         retentionStrategy:
           always: {}
         launcher:
@@ -41,8 +41,7 @@ security:
       - "method java.net.URLConnection setDoOutput boolean"
       - "method java.net.URLConnection setRequestProperty java.lang.String java.lang.String"
       - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getText java.io.InputStream"
-      - "method java.net.URL openConnection"
-      - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object"
+      - "method java.util.Map putAt java.lang.Object java.lang.Object"
       - "staticMethod groovy.json.JsonOutput toJson java.lang.Object"
 
 credentials:
@@ -88,7 +87,7 @@ unclassified:
     url: "http://localhost:8080/"
   mailer:
     smtpHost: "smtp.gmail.com"
-    smtpPort: 587
+    smtpPort: "587"
     useTls: true
     authentication:
       username: "${SMTP_USERNAME}"
@@ -152,28 +151,6 @@ jobs:
             lightweight(true)
           }
         }
-        configure { project ->
-          def mail = project / 'publishers' / 'hudson.plugins.emailext.ExtendedEmailPublisher'
-          mail.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
-          mail.appendNode('defaultSubject', '$DEFAULT_SUBJECT')
-          mail.appendNode('defaultContent', '$DEFAULT_CONTENT')
-          mail.appendNode('contentType', 'default')
-          def triggers = mail.appendNode('configuredTriggers')
-          def failure = triggers.appendNode('hudson.plugins.emailext.plugins.trigger.FailureTrigger')
-          def email = failure.appendNode('email')
-          email.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
-          email.appendNode('subject', '$DEFAULT_SUBJECT')
-          email.appendNode('body', '$DEFAULT_CONTENT')
-          email.appendNode('sendToDevelopers', false)
-          email.appendNode('sendToRequester', false)
-          email.appendNode('includeCulprits', true)
-          email.appendNode('sendToRecipientList', true)
-          email.appendNode('attachmentsPattern', '')
-          email.appendNode('attachBuildLog', false)
-          email.appendNode('compressBuildLog', false)
-          email.appendNode('replyTo', '$DEFAULT_REPLYTO')
-          email.appendNode('contentType', 'default')
-        }
       }
 
       pipelineJob('dms-destroy-app') {
@@ -192,27 +169,5 @@ jobs:
             scriptPath('projects/domain-monitoring-system/scripts/destroy-dms-app.groovy')
             lightweight(true)
           }
-        }
-        configure { project ->
-          def mail = project / 'publishers' / 'hudson.plugins.emailext.ExtendedEmailPublisher'
-          mail.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
-          mail.appendNode('defaultSubject', '$DEFAULT_SUBJECT')
-          mail.appendNode('defaultContent', '$DEFAULT_CONTENT')
-          mail.appendNode('contentType', 'default')
-          def triggers = mail.appendNode('configuredTriggers')
-          def failure = triggers.appendNode('hudson.plugins.emailext.plugins.trigger.FailureTrigger')
-          def email = failure.appendNode('email')
-          email.appendNode('recipientList', '$DEFAULT_RECIPIENTS')
-          email.appendNode('subject', '$DEFAULT_SUBJECT')
-          email.appendNode('body', '$DEFAULT_CONTENT')
-          email.appendNode('sendToDevelopers', false)
-          email.appendNode('sendToRequester', false)
-          email.appendNode('includeCulprits', true)
-          email.appendNode('sendToRecipientList', true)
-          email.appendNode('attachmentsPattern', '')
-          email.appendNode('attachBuildLog', false)
-          email.appendNode('compressBuildLog', false)
-          email.appendNode('replyTo', '$DEFAULT_REPLYTO')
-          email.appendNode('contentType', 'default')
         }
       }

@@ -22,11 +22,47 @@ options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--window-size=1920,1080")
 options.add_argument("--disable-gpu")
-options.binary_location = "/usr/bin/chromium"
+
+# Auto-detect chromium binary location
+import shutil
+chromium_paths = ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/snap/bin/chromium"]
+chromium_binary = None
+for path in chromium_paths:
+    if os.path.exists(path):
+        chromium_binary = path
+        break
+
+# If none found, try using shutil.which
+if not chromium_binary:
+    chromium_binary = shutil.which("chromium") or shutil.which("chromium-browser")
+
+if chromium_binary:
+    options.binary_location = chromium_binary
+    print(f"Using chromium binary at: {chromium_binary}")
+else:
+    print("Warning: Could not find chromium binary, Selenium will use default")
 
 # ----- Start Chrome -----
 from selenium.webdriver.chrome.service import Service
-service = Service(executable_path="/usr/bin/chromedriver")
+
+# Auto-detect chromedriver location
+chromedriver_paths = ["/usr/bin/chromedriver", "/usr/local/bin/chromedriver"]
+chromedriver_binary = None
+for path in chromedriver_paths:
+    if os.path.exists(path):
+        chromedriver_binary = path
+        break
+
+if not chromedriver_binary:
+    chromedriver_binary = shutil.which("chromedriver")
+
+if chromedriver_binary:
+    service = Service(executable_path=chromedriver_binary)
+    print(f"Using chromedriver at: {chromedriver_binary}")
+else:
+    service = Service()  # Let Selenium find it
+    print("Using default chromedriver location")
+
 driver = webdriver.Chrome(service=service, options=options)
 
 try:
