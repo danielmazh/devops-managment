@@ -84,7 +84,7 @@ credentials:
 
 unclassified:
   location:
-    adminAddress: "team3jenkins@no-reply.com"
+    adminAddress: "${JENKINS_ADMIN_EMAIL}"
     url: "http://localhost:8080/"
   mailer:
     smtpHost: "smtp.gmail.com"
@@ -93,7 +93,7 @@ unclassified:
     authentication:
       username: "${SMTP_USERNAME}"
       password: "${SMTP_PASSWORD}"
-    replyToAddress: "team3jenkins@no-reply.com"
+    replyToAddress: "${JENKINS_ADMIN_EMAIL}"
   extendedEmailPublisher:
     adminRequiredForTemplateTesting: false
     allowUnregisteredEnabled: true
@@ -106,7 +106,7 @@ unclassified:
     defaultSubject: "$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!"
     defaultSuffix: "@gmail.com"
     maxAttachmentSize: -1
-    defaultRecipients: "coperman12@gmail.com, daniel.mazhbits@gmail.com"
+    defaultRecipients: "${NOTIFICATION_EMAILS}"
     watchingEnabled: true
 
 jobs:

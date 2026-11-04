@@ -82,8 +82,8 @@ try:
     password_input = wait.until(EC.presence_of_element_located((By.NAME, "password")))
 
     # ----- Enter credentials -----
-    username_input.send_keys("D7675808@gmail.com")
-    password_input.send_keys("D7675808@gmail.com")
+    username_input.send_keys(os.environ["TEST_USER_EMAIL"])
+    password_input.send_keys(os.environ["TEST_USER_PASSWORD"])
     password_input.send_keys(Keys.RETURN)
 
     # ----- Wait for redirect to dashboard after login -----
