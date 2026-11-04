@@ -48,6 +48,9 @@
 
     - name: Execute domain testing script
       ansible.builtin.script: ../scripts/test-app/test-selenium/app.py
+      environment:
+        TEST_USER_EMAIL: "{{ lookup('env', 'TEST_USER_EMAIL') }}"
+        TEST_USER_PASSWORD: "{{ lookup('env', 'TEST_USER_PASSWORD') }}"
       args:
         executable: python3
       register: test_result

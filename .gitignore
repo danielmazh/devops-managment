@@ -7,3 +7,4 @@
 *.tfvars
 *.env
 jenkins_first_init
+.env

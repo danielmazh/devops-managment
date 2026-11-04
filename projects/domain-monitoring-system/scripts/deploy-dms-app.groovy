@@ -115,7 +115,7 @@ pipeline {
         string(name: 'CUSTOMER_NAME', defaultValue: 'test_customer', description: 'Enter customer name')
         choice(name: 'FRONTEND_COUNT', choices: ['1','2','3'], description: 'Number of frontend instances')
         choice(name: 'BACKEND_COUNT', choices: ['1'], description: 'Number of backend instances')
-        string(name: 'EMAIL_RECIPIENT', defaultValue: 'your-email@example.com', description: 'Email for notifications')
+        string(name: 'EMAIL_RECIPIENT', defaultValue: '', description: 'Email for notifications')
         booleanParam(name: 'SKIP_TERRAFORM', defaultValue: false, description: 'Skip Terraform Apply (Use existing infrastructure)')
         booleanParam(name: 'AUTO_APPROVE', defaultValue: false, description: 'Skip manual approval and auto-apply Terraform')
         booleanParam(name: 'SKIP_BACKEND_CONFIG', defaultValue: false, description: 'Skip Backend Configuration')
